@@ -1,8 +1,11 @@
-# import sys, os
-# sys.path.append(os.path.abspath("./"))
+import sys, os
+sys.path.append(os.path.abspath("./../utilities/"))
+sys.path.append(os.path.abspath("./../kward/"))
+sys.path.append(os.path.abspath("./../metric_learning/"))
 from helper import Utilities, PerformanceEvaluation
 import pandas as pd
-from metric_learning import Subsampling, MetricLearning
+from metric_learning import MetricLearning
+from subsampling import Subsampling
 from user_feedback import Similarity
 from scipy.misc import comb
 import numpy as np

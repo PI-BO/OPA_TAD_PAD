@@ -24,7 +24,8 @@ To cite the paper:
 - `pandas` 
 - `tensorflow` 
 - `scipy` 
-- `matplotlib` 
+- `matplotlib`
+- `cvxpy <= 0.4.11`
 
 
 # PAD repository
