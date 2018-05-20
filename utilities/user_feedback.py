@@ -51,7 +51,7 @@ class Similarity:
             cluster_labels_current = clusterer.fit_predict(self.data_interested)
             silhouette_avg_current = silhouette_score(self.data_interested,cluster_labels_current)
             print("For n_clusters =", n_clusters,
-                  "The average silhouette_score is :", silhouette_avg_current)
+                "The average silhouette_score is :", silhouette_avg_current)
             cluster_labels.append(cluster_labels_current)
             silhouette_avg.append(silhouette_avg_current)
         best_n_clusters_index = np.where(silhouette_avg == max(silhouette_avg))[0]

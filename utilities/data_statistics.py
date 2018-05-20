@@ -2,8 +2,6 @@ import pandas as pd
 import numpy as np
 import pdb
 
-
-
 class OccupancyStatistics:
     '''
     Extract ocupancy statistics from the daily profile
@@ -89,12 +87,12 @@ class UtilityOccupancyStatistics:
         elif x[-1] == 0:
             x_inv = x[::-1]
             dep_time_ind_inv = next((ind for ind, value in enumerate(x_inv) if value > 0 ), None)
-            
+
             if dep_time_ind_inv is None:
                 dep_time_ind = np.nan
             else:
                 dep_time_ind = len(x) - dep_time_ind_inv
-            
+
         # print(dep_time_ind)
         # if dep_time_ind is None:
         #     pdb.set_trace()

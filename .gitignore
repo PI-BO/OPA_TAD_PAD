@@ -55,3 +55,20 @@ __pycache__/
 
 #temp folder
 temp/*
+
+.vscode/*
+#!.vscode/settings.json
+#!.vscode/tasks.json
+#!.vscode/launch.json
+#!.vscode/extensions.json
+
+#results from the FW
+results/*
+
+#datasets
+dataset/*
+!.dataset/dataframe_all_binary.pkl
+!.dataset/dataframe_all_energy.pkl
+
+#configes
+framework/run_configes/*

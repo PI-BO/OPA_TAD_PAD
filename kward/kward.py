@@ -46,7 +46,6 @@ class K_ward:
         data = data.as_matrix()
         data_size = data.shape[0]
         if self.distance_metric != 'self-defined':
-
             if self.distance_metric == 'euclidean':
                 dist = DistanceMetric.get_metric('euclidean')
             elif self.distance_metric == 'mahalanobis':

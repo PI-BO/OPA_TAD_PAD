@@ -26,14 +26,10 @@ from keras.regularizers import l1_l2
 from user_feedback import Similarity
 np.random.seed(0)
 
-
-
 class Deep_Metric:
 
     def __init__(self, mode = "non_linear"):
         self.mode = "linear"
-        
-
         self.batch_size = 10
         self.epochs = 200
 
