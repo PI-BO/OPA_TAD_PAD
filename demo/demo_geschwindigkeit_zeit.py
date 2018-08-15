@@ -25,13 +25,14 @@ mel = MetricLearning()
 r = requests.get('http://sr-labor.dd-dns.de:8080/rwsdatagathering/funktionen/getalldata').json()
 listespalten = []
 for i in range(0,1440):
-    listespalten.append(""+str(i));
+    listespalten.append(str(i));
 
 day_profile = pd.DataFrame(columns=listespalten)
-
+day_profile.columns.names = ['timeIndex']
 #print(day_profile)
 
 i = 0
+index = 0
 anzahlfahrten = 0
 
 neuedatensammlungid = -1
@@ -45,27 +46,45 @@ for jo in r:
     neuedatensammlungid = jo["datensammlung_id"]
 
     if altedatensammlungid != neuedatensammlungid:
-        if anzahlfahrten >= 5:
+        if anzahlfahrten >= 5 and i <= 14:
             day_profile.loc[i] = liste
+            i+=1
+            anzahlfahrten = 0
+            index=0
 
-        i+=1
-        anzahlfahrten = 0
-        liste = []
-        for j in range(0, 1440):
-            liste.append(-1)
+        else:
+            liste = []
+            for j in range(0, 1440):
+                liste.append(-1)
+                index = 0
 
 
     altedatensammlungid = neuedatensammlungid
+    # zeit = dt.timedelta(seconds=jo["timestamp"]/1000)
+    # minute = (zeit.seconds % 3600) // 60
 
-    zeit = dt.timedelta(seconds=jo["timestamp"]/1000)
-    minute = (zeit.seconds % 3600) // 60
+    geschwindigkeit = jo["geschwindigkeit"]
+    klasse = -2
+    if geschwindigkeit == 0:
+        klasse = 0
+    elif geschwindigkeit > 0 and geschwindigkeit <= 30:
+        klasse = 1
+    elif geschwindigkeit > 30 and geschwindigkeit <= 50:
+        klasse = 2
+    elif geschwindigkeit > 50 and geschwindigkeit <= 70:
+        klasse = 3
+    elif geschwindigkeit > 70 and geschwindigkeit <= 100:
+        klasse = 4
+    elif geschwindigkeit > 100 and geschwindigkeit <= 130:
+        klasse = 5
+    else:
+        klasse = 6
 
-    liste[minute] = jo["geschwindigkeit"]
+
+    liste[index] = klasse
+    index+=1
 
 
-
-
-#day_profile = day_profile.iloc[0:# :4,0::60]#day_profile.iloc[0::4,0::60]
 print(day_profile)
 
 rep_mode = 'mean'
@@ -99,7 +118,7 @@ sim = Similarity(data=data_pair_all)
 sim.extract_interested_attribute(interest=interest, window=window)
 similarity_label_all, class_label_all = sim.label_via_silhouette_analysis(range_n_clusters=range(2,8))
 similarity_label_all_series = pd.Series(similarity_label_all)
-similarity_label_all_series.index = dademo_efficient_labeling.pyta_pair_all_index
+similarity_label_all_series.index = data_pair_all_index
 print('similarity balance is %s'% [sum(similarity_label_all),len(similarity_label_all)])
 
 
