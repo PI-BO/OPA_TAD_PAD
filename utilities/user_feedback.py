@@ -3,7 +3,7 @@ import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 
-from data_statistics import OccupancyStatistics
+from utilities.data_statistics import OccupancyStatistics
 
 
 class Similarity:

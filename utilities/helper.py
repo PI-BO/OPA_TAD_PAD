@@ -1,9 +1,9 @@
+from kward.kward import K_ward
+from utilities.data_statistics import OccupancyStatistics
+
 import numpy as np
 import pandas as pd
 import scipy as sp
-
-from kward import K_ward
-from data_statistics import OccupancyStatistics
 
 np.random.seed(0)
 

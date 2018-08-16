@@ -1,9 +1,10 @@
+from utilities.helper import Miscellaneous
+
 import itertools
 import cvxpy as cvx
 import numpy as np
 import pdb
-from cvxpy import *
-from helper import Miscellaneous
+from cvxpy import norm, SCS,sqrt
 import numpy as np
 
 
@@ -60,7 +61,7 @@ class MetricLearning:
             else:
                 return prob.status, np.nan, np.nan
 
-    def learn_with_simialrity_label_regularization(self,data,label,lam_vec,train_portion):
+    def learn_with_similarity_regularization(self,data,label,lam_vec,train_portion):
         """
         Implementation of the metric learning algorithm presented in our paper with l-1 regularization
         """
@@ -69,7 +70,7 @@ class MetricLearning:
         X_s = np.array([list(data[i][0] - data[i][1]) for i in index_s])
         X_ns = np.array([list(data[i][0] - data[i][1]) for i in index_ns])
         n_feature = data[0][0].shape[0]
-
+        
         misc = Miscellaneous()
         s_size = len(X_s)
         ns_size = len(X_ns)
@@ -81,7 +82,7 @@ class MetricLearning:
         X_s_test = X_s[int(s_size * train_portion):,:]
         X_ns_train = X_ns[:int(ns_size * train_portion),:]
         X_ns_test = X_ns[int(ns_size * train_portion):,:]
-
+       
         ratio = []
         dist_metric = []
         while 1:
@@ -115,6 +116,7 @@ class MetricLearning:
                     ratio_current = sum(dist_s) /sum(dist_ns)
                 ratio.append(ratio_current)
             if all(np.isnan(ratio)):
+                print("isnan")
                 best_idx = [0]
                 lam_vec = [lam_vec[-1]/10]
             else:
@@ -124,12 +126,3 @@ class MetricLearning:
                 print(ratio)
                 break
         return dist_metric[best_idx[0]]
-
-
-
-
-
-
-
-
-

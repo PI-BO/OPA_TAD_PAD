@@ -1,11 +1,13 @@
-# import sys, os
-# sys.path.append(os.path.abspath("./"))
+import sys
+sys.path.append('../')
+
 from utilities.helper import Utilities, PerformanceEvaluation
-import pandas as pd
 from metric_learning.metric_learning import MetricLearning
 from utilities.user_feedback import Similarity
 from utilities.subsampling import Subsampling
 from scipy.misc import comb
+
+import pandas as pd
 import numpy as np
 import pickle
 import requests
@@ -19,37 +21,37 @@ pe = PerformanceEvaluation()
 mel = MetricLearning()
 
 # get the database to be published
-#day_profile = pd.read_pickle('../dataset/dataframe_all_binary.pkl')                          # neue Daten einlesen
+#day_profile = pd.read_pickle('../dataset/dataframe_all_binary.pkl')                          # import new data
 #day_profile = day_profile.iloc[0::4,0::60]#day_profile.iloc[0::4,0::60]
 #print(day_profile)
 r = requests.get('http://sr-labor.dd-dns.de:8080/rwsdatagathering/funktionen/getalldata').json()
-listespalten = []
+columnList = []
 for i in range(0,1440):
-    listespalten.append(str(i));
+    columnList.append(str(i))
 
-day_profile = pd.DataFrame(columns=listespalten)
+day_profile = pd.DataFrame(columns=columnList)
 day_profile.columns.names = ['timeIndex']
 #print(day_profile)
 
 i = 0
 index = 0
-anzahlfahrten = 0
+numberOfTrips = 0
 
-neuedatensammlungid = -1
-altedatensammlungid = -1
+newDataCollectionId = -1
+oldDataCollectionId = -1
 liste = []
 for j in range(0,1440):
     liste.append(-1)
 
 for jo in r:
-    anzahlfahrten+=1
-    neuedatensammlungid = jo["datensammlung_id"]
+    numberOfTrips+=1
+    newDataCollectionId = jo["datensammlung_id"]
 
-    if altedatensammlungid != neuedatensammlungid:
-        if anzahlfahrten >= 5 and i <= 14:
+    if oldDataCollectionId != newDataCollectionId:
+        if numberOfTrips >= 5 and i <= 99:
             day_profile.loc[i] = liste
             i+=1
-            anzahlfahrten = 0
+            numberOfTrips = 0
             index=0
 
         else:
@@ -59,29 +61,30 @@ for jo in r:
                 index = 0
 
 
-    altedatensammlungid = neuedatensammlungid
-    # zeit = dt.timedelta(seconds=jo["timestamp"]/1000)
-    # minute = (zeit.seconds % 3600) // 60
+    oldDataCollectionId = newDataCollectionId
+    # time = dt.timedelta(seconds=jo["timestamp"]/1000)
+    # minute = (time.seconds % 3600) // 60
 
-    geschwindigkeit = jo["geschwindigkeit"]
-    klasse = -2
-    if geschwindigkeit == 0:
-        klasse = 0
-    elif geschwindigkeit > 0 and geschwindigkeit <= 30:
-        klasse = 1
-    elif geschwindigkeit > 30 and geschwindigkeit <= 50:
-        klasse = 2
-    elif geschwindigkeit > 50 and geschwindigkeit <= 70:
-        klasse = 3
-    elif geschwindigkeit > 70 and geschwindigkeit <= 100:
-        klasse = 4
-    elif geschwindigkeit > 100 and geschwindigkeit <= 130:
-        klasse = 5
+    speed = jo["geschwindigkeit"]
+    classId = -2
+    if speed == 0:
+        classId = 0
+    elif speed > 0 and speed <= 30:
+        classId = 1
+    elif speed > 30 and speed <= 50:
+        classId = 2
+    elif speed > 50 and speed <= 70:
+        classId = 3
+    elif speed > 70 and speed <= 100:
+        classId = 4
+    elif speed > 100 and speed <= 130:
+        classId = 5
+    elif speed > 130:
+        classId = 6
     else:
-        klasse = 6
-
-
-    liste[index] = klasse
+        classId = -2
+  
+    liste[index] = classId
     index+=1
 
 
@@ -95,7 +98,7 @@ lam_vec = [1e-3,1e-2,1e-1,1,10]
 # information of a segment of entire time series. In this case, he/she would also need to specify the starting and
 # ending time of the time series segment of interest.
 
-                                                                                             # Interesse des Nutzers erfassen
+                                                                                             # capturing the user's interest
 interest = 'segment'
 window = [11,15] # window specifies the starting and ending time of the period that the data user is interested in
 
@@ -143,7 +146,6 @@ for mc_i in range(mc_num):
     dist_metric_mc = []
     k = k_init
     while k <= subsample_size_max:
-
         if k == k_init:
             pairdata,pairdata_idx = sp.uniform_sampling(subsample_size=k,seed=seed_vec[mc_i])
             pairdata_label = similarity_label_all_series.loc[pairdata_idx]
@@ -151,14 +153,12 @@ for mc_i in range(mc_num):
             pairdata, pairdata_idx = sp.uniform_sampling(subsample_size=k, seed=None)
             pairdata_label = similarity_label_all_series.loc[pairdata_idx]
 
-        # sim = Similarity(data=pairdata)
-        # sim.extract_interested_attribute(interest=interest, window=window)
-        # pairdata_label,_ = sim.label_via_silhouette_analysis(range_n_clusters=range(2, 8))
-        dist_metric = mel.learn_with_simialrity_label_regularization(data=pairdata,
-                                                                     label=pairdata_label,
-                                                                     lam_vec=lam_vec,
-                                                                     train_portion=0.8)
-        # _, _, dist_metric = mel.learn_with_similarity_label(pairdata, pairdata_label, "diag",lam_vec)
+        dist_metric = mel.learn_with_similarity_regularization(data=pairdata,
+                                                                label=pairdata_label,
+                                                                lam_vec=lam_vec,
+                                                                train_portion=0.8)
+        print ("dist_metric")
+        #dist_metric = mel.learn_with_similarity_label(pairdata, pairdata_label, "diag",lam_vec)
         if dist_metric is None:
             loss_learned_metric_unif = np.nan
         else:
