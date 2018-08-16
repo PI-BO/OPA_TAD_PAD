@@ -215,7 +215,7 @@ for mc_i in range(mc_num):
         similarity_label = similarity_label_all_series.loc[pairdata_idx].tolist()
         pairdata_label_active_mc = pairdata_label_active_mc + similarity_label
         # _, _, dist_metric = mel.learn_with_similarity_label(pairdata_active_mc, pairdata_label_active_mc, "diag", lam_vec)
-        dist_metric = mel.learn_with_simialrity_label_regularization(data=pairdata_active_mc,
+        dist_metric = mel.learn_with_similarity_regularization(data=pairdata_active_mc,
                                                                      label=pairdata_label_active_mc,
                                                                      lam_vec=lam_vec,
                                                                      train_portion=0.8)
