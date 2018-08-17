@@ -1,4 +1,4 @@
-import sys
+import os, sys
 sys.path.append('../')
 
 from utilities.helper import Utilities, PerformanceEvaluation
@@ -13,7 +13,38 @@ import pickle
 import requests
 import matplotlib.pyplot as plt
 import datetime as dt
+import logging
+import warnings
 
+# ignore warnings
+warnings.filterwarnings("ignore")
+
+# set default values
+logDir = "./../log"
+restUri ="http://sr-labor.dd-dns.de:8080/rwsdatagathering/funktionen/getalldata"
+k_init = 10
+batch_size = 20
+mc_num = 5
+
+# create logger dir if it not exists
+if not os.path.exists(logDir):
+    os.makedirs(logDir)
+# create logger with script name
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+# create file handler which logs even debug messages
+fh = logging.FileHandler(logDir + "/" + __file__[0:-3] + ".log")
+fh.setLevel(logging.DEBUG)
+# create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+# create formatter and add it to the handlers
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+fh.setFormatter(formatter)
+ch.setFormatter(formatter)
+# add the handlers to the logger
+logger.addHandler(fh)
+logger.addHandler(ch)
 
 # Initialization of some useful classes
 util = Utilities()
@@ -24,14 +55,13 @@ mel = MetricLearning()
 #day_profile = pd.read_pickle('../dataset/dataframe_all_binary.pkl')                          # import new data
 #day_profile = day_profile.iloc[0::4,0::60]#day_profile.iloc[0::4,0::60]
 #print(day_profile)
-r = requests.get('http://sr-labor.dd-dns.de:8080/rwsdatagathering/funktionen/getalldata').json()
+r = requests.get(restUri).json()
 columnList = []
 for i in range(0,1440):
     columnList.append(str(i))
 
 day_profile = pd.DataFrame(columns=columnList)
 day_profile.columns.names = ['timeIndex']
-#print(day_profile)
 
 i = 0
 index = 0
@@ -88,7 +118,7 @@ for jo in r:
     index+=1
 
 
-print(day_profile)
+logger.debug(day_profile)
 
 rep_mode = 'mean'
 anonymity_level = 2 # desired anonymity level
@@ -108,10 +138,10 @@ sanitized_profile_baseline = util.sanitize_data(day_profile, distance_metric='eu
 loss_generic_metric = pe.get_information_loss(data_gt=day_profile,
                                               data_sanitized=sanitized_profile_baseline.round(),
                                               window=window)
-print("information loss with generic metric %s" % loss_generic_metric)
+logger.info("information loss with generic metric %s" % loss_generic_metric)
 df_subsampled_from = sanitized_profile_baseline.drop_duplicates().sample(frac=1)
 subsample_size_max = int(comb(len(df_subsampled_from),2))
-print('total number of pairs is %s' % subsample_size_max)
+logger.info('total number of pairs is %s' % subsample_size_max)
 
 # # obtain ground truth similarity labels
 sp = Subsampling(data=df_subsampled_from)
@@ -122,12 +152,8 @@ sim.extract_interested_attribute(interest=interest, window=window)
 similarity_label_all, class_label_all = sim.label_via_silhouette_analysis(range_n_clusters=range(2,8))
 similarity_label_all_series = pd.Series(similarity_label_all)
 similarity_label_all_series.index = data_pair_all_index
-print('similarity balance is %s'% [sum(similarity_label_all),len(similarity_label_all)])
+logger.info('similarity balance is %s'% [sum(similarity_label_all),len(similarity_label_all)])
 
-
-k_init = 10
-batch_size = 20
-mc_num = 5
 seed_vec = np.arange(0,mc_num)
 
 # ##################
@@ -157,7 +183,7 @@ for mc_i in range(mc_num):
                                                                 label=pairdata_label,
                                                                 lam_vec=lam_vec,
                                                                 train_portion=0.8)
-        print ("dist_metric")
+        logger.info ("dist_metric")
         #dist_metric = mel.learn_with_similarity_label(pairdata, pairdata_label, "diag",lam_vec)
         if dist_metric is None:
             loss_learned_metric_unif = np.nan
@@ -170,9 +196,9 @@ for mc_i in range(mc_num):
         loss_learned_metric_unif_mc.append(loss_learned_metric_unif)
         pairdata_each_mc.append(pairdata)
         pairlabel_each_mc.append(pairdata_label)
-        print("sampled size %s" % k)
-        print('k is %s' % k)
-        print("information loss with uniform metric %s" % np.mean(loss_learned_metric_unif_mc))
+        logger.info("sampled size %s" % k)
+        logger.info('k is %s' % k)
+        logger.info("information loss with uniform metric %s" % np.mean(loss_learned_metric_unif_mc))
         k += batch_size
     loss_iters_unif.append(loss_learned_metric_unif_mc)
     pairdata_all.append(pairdata_each_mc)
@@ -189,9 +215,6 @@ with open('../result/loss_uniform_cv.pickle', 'wb') as f:
 # active learning
 
 # actively sample a subset of pre-sanitized database
-
-
-
 
 pairdata_all_active = []
 pairlabel_all_active = []
@@ -231,9 +254,9 @@ for mc_i in range(mc_num):
             pairlabel_each_mc_active.append(pairdata_label_active_mc)
 
 
-            print("sampled size %s" % sp.k_already)
-            print('k is %s' % k)
-            print("information loss with active metric %s" % loss_learned_metric_active)
+            logger.info("sampled size %s" % sp.k_already)
+            logger.info('k is %s' % k)
+            logger.info("information loss with active metric %s" % loss_learned_metric_active)
         k += 1
     loss_iters_active.append(loss_iters_active_mc)
     pairdata_all_active.append(pairdata_each_mc_active)
@@ -245,11 +268,6 @@ with open('../result/loss_active_cv.pickle', 'wb') as f:
     pickle.dump([loss_iters_active,k_init,subsample_size_max,batch_size,loss_generic_metric,
                  pairdata_all_active,pairlabel_all_active], f)
 
-
-import numpy as np
-import pickle
-import matplotlib.pyplot as plt
-mc_num = 5
 # plot
 with open('./result/loss_active_lam1_diag.pickle', 'rb') as f:
     loss_iters_active, k_init, subsample_size_max, batch_size, loss_generic_metric = \

@@ -4,8 +4,9 @@ import itertools
 import cvxpy as cvx
 import numpy as np
 import pdb
-from cvxpy import norm, SCS,sqrt
+from cvxpy import SCS, MOSEK, norm,sqrt, sum_entries, mul_elemwise
 import numpy as np
+import logging
 
 
 class MetricLearning:
@@ -116,7 +117,6 @@ class MetricLearning:
                     ratio_current = sum(dist_s) /sum(dist_ns)
                 ratio.append(ratio_current)
             if all(np.isnan(ratio)):
-                print("isnan")
                 best_idx = [0]
                 lam_vec = [lam_vec[-1]/10]
             else:

@@ -73,3 +73,6 @@ dataset/*
 
 #configes
 framework/run_configes/*
+
+#log
+log/
