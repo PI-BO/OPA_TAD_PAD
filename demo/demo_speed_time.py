@@ -20,31 +20,49 @@ import warnings
 warnings.filterwarnings("ignore")
 
 # set default values
-logDir = "./../log"
+logDir = "./log"
 restUri ="http://sr-labor.dd-dns.de:8080/rwsdatagathering/funktionen/getalldata"
+resultDir = "./result"
 k_init = 10
 batch_size = 20
 mc_num = 5
 
-# create logger dir if it not exists
-if not os.path.exists(logDir):
-    os.makedirs(logDir)
 # create logger with script name
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-# create file handler which logs even debug messages
-fh = logging.FileHandler(logDir + "/" + __file__[0:-3] + ".log")
-fh.setLevel(logging.DEBUG)
 # create console handler with a higher log level
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
-# create formatter and add it to the handlers
+# create formatter and add it to the console handler
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-fh.setFormatter(formatter)
 ch.setFormatter(formatter)
-# add the handlers to the logger
-logger.addHandler(fh)
+# add the console handler to the logger
 logger.addHandler(ch)
+# create logger dir if it not exists
+if not os.path.exists(logDir):
+    try:
+        os.makedirs(logDir)
+    except OSError:
+        logger.error("Cannot create directory %s"% logDir)
+# create file handler which logs even debug messages
+try:
+    fh = logging.FileHandler(logDir + "/" + __file__[0:-3] + ".log")
+except:
+    logger.error("Cannot create file: %s/%s.log"% (logDir, __file__[0:-3]))
+else:
+    fh.setLevel(logging.DEBUG)
+    # add formatter it to the file handler
+    fh.setFormatter(formatter)
+    # add the file handler to the logger
+    logger.addHandler(fh)
+
+
+# create result dir if it not exists
+if not os.path.exists(resultDir):
+    try:
+        os.makedirs(resultDir)
+    except OSError:
+        logger.error("Cannot create directory: %s"% logDir)
 
 # Initialization of some useful classes
 util = Utilities()
@@ -136,8 +154,7 @@ window = [11,15] # window specifies the starting and ending time of the period t
 sanitized_profile_baseline = util.sanitize_data(day_profile, distance_metric='euclidean',
                                                 anonymity_level=anonymity_level,rep_mode = rep_mode)
 loss_generic_metric = pe.get_information_loss(data_gt=day_profile,
-                                              data_sanitized=sanitized_profile_baseline.round(),
-                                              window=window)
+                                                data_sanitized=sanitized_profile_baseline.round(), window=window)
 logger.info("information loss with generic metric %s" % loss_generic_metric)
 df_subsampled_from = sanitized_profile_baseline.drop_duplicates().sample(frac=1)
 subsample_size_max = int(comb(len(df_subsampled_from),2))
@@ -188,7 +205,7 @@ for mc_i in range(mc_num):
         if dist_metric is None:
             loss_learned_metric_unif = np.nan
         else:
-            sanitized_profile_unif = util.sanitize_data(day_profile, distance_metric="mahalanobis",
+            sanitized_profile_unif = util.sanitize_data(day_profile, distance_metric = "mahalanobis",
                                                           anonymity_level=anonymity_level, rep_mode=rep_mode, VI=dist_metric)
             loss_learned_metric_unif = pe.get_information_loss(data_gt=day_profile,
                                                                  data_sanitized=sanitized_profile_unif.round(),
@@ -205,11 +222,12 @@ for mc_i in range(mc_num):
     pairlabel_all.append(pairlabel_each_mc)
 
 
-
-with open('../result/loss_uniform_cv.pickle', 'wb') as f:
-    pickle.dump([loss_iters_unif,k_init,subsample_size_max,batch_size,loss_generic_metric,
-                 pairdata_all,pairlabel_all], f)
-
+try:
+    with open(resultDir + "/loss_uniform_cv.pickle", "wb") as f:
+        pickle.dump([loss_iters_unif,k_init,subsample_size_max,batch_size,loss_generic_metric,
+                    pairdata_all,pairlabel_all], f)
+except:
+    logger.error("Cannot create file: %s/loss_uniform_cv.pickle"% resultDir)
 
 ##################
 # active learning
@@ -263,19 +281,27 @@ for mc_i in range(mc_num):
     pairlabel_all_active.append(pairlabel_each_mc_active)
 
 
-
-with open('../result/loss_active_cv.pickle', 'wb') as f:
-    pickle.dump([loss_iters_active,k_init,subsample_size_max,batch_size,loss_generic_metric,
-                 pairdata_all_active,pairlabel_all_active], f)
+try:
+    with open(resultDir + "/loss_active_cv.pickle", "wb") as f:
+        pickle.dump([loss_iters_active,k_init,subsample_size_max,batch_size,loss_generic_metric,
+                    pairdata_all_active,pairlabel_all_active], f)
+except:
+    logger.error("Cannot create file: %s/loss_active_cv.pickle"% resultDir)
 
 # plot
-with open('./result/loss_active_lam1_diag.pickle', 'rb') as f:
-    loss_iters_active, k_init, subsample_size_max, batch_size, loss_generic_metric = \
-        pickle.load(f)
+try:
+    with open(resultDir + "/loss_active_lam1_diag.pickle", "rb") as f:
+        loss_iters_active, k_init, subsample_size_max, batch_size, loss_generic_metric = \
+            pickle.load(f)
+except:
+    logger.error("Cannot create file: %s/loss_active_lam1_diag.pickle"% resultDir)
 
-with open('./result/loss_uniform_lam1_diag.pickle', 'rb') as f:
-    loss_iters_unif, k_init_unif, subsample_size_max_unif, batch_size_unif, loss_generic_metric_unif = \
-        pickle.load(f)
+try:
+    with open(resultDir + "/loss_uniform_lam1_diag.pickle", "rb") as f:
+        loss_iters_unif, k_init_unif, subsample_size_max_unif, batch_size_unif, loss_generic_metric_unif = \
+            pickle.load(f)
+except:
+    logger.error("Cannot create file: %s/loss_uniform_lam1_diag.pickle"% resultDir)
 
 loss_iters_active_format = np.asarray(loss_iters_active)
 loss_active_mean = np.mean(loss_iters_active_format,axis=0)
