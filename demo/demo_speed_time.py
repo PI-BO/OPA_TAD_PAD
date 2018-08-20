@@ -46,9 +46,9 @@ if not os.path.exists(logDir):
         logger.error("Cannot create directory %s"% logDir)
 # create file handler which logs even debug messages
 try:
-    fh = logging.FileHandler(logDir + "/" + __file__[0:-3] + ".log")
+    fh = logging.FileHandler(logDir + "/" + __file__[0:-3] + "_" + dt.datetime.now().strftime("%Y%m%d_%H%M%S") + ".log")
 except:
-    logger.error("Cannot create file: %s/%s.log"% (logDir, __file__[0:-3]))
+    logger.error("Cannot create file: %s/%s_%s.log"% (logDir, __file__[0:-3], dt.datetime.now().strftime("%Y%m%d_%H%M%S")))
 else:
     fh.setLevel(logging.DEBUG)
     # add formatter it to the file handler
