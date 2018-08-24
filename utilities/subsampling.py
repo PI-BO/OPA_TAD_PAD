@@ -1,7 +1,6 @@
 import itertools
 import numpy as np
 import pdb
-import numpy as np
 
 class Subsampling:
     def __init__(self,data):
@@ -92,6 +91,10 @@ class Subsampling:
         return pairdata, pairdata_idx
 
     def get_uncertainty_entropy_deep(self, pair, dist_metric, mu):
+        print(type(pair))
+        print(pair)        
+        print(type(dist_metric))
+        print(dist_metric)
         dist = dist_metric.transform(pair)
         # pdb.set_trace()]
         if not np.isscalar(dist):

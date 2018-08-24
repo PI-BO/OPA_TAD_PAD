@@ -6,13 +6,11 @@ import numpy as np
 import pandas as pd
 import logging
 
-class Similarity(object):
+class Similarity:
     """
     Data user: Find the similarity labels given a small set of data pairs
     """
-    def __init__(self, data, logger = None):
-        self.logger = logger or logging.getLogger(__name__)
-        self.logger.info("test")
+    def __init__(self,data):
         self.pair = data
         self.pair_index = [(x[0].name, x[1].name) for x in self.pair]
         dataSubsample_rep = pd.DataFrame()
@@ -52,7 +50,8 @@ class Similarity(object):
             clusterer = KMeans(n_clusters=n_clusters)
             cluster_labels_current = clusterer.fit_predict(self.data_interested)
             silhouette_avg_current = silhouette_score(self.data_interested,cluster_labels_current)
-            self.logger.info("For n_clusters = %i The average silhouette_score is : %i "% (n_clusters, silhouette_avg_current))
+            print("For n_clusters =", n_clusters,
+                "The average silhouette_score is :", silhouette_avg_current)
             cluster_labels.append(cluster_labels_current)
             silhouette_avg.append(silhouette_avg_current)
         best_n_clusters_index = np.where(silhouette_avg == max(silhouette_avg))[0]

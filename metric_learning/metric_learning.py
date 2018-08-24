@@ -62,7 +62,7 @@ class MetricLearning:
             else:
                 return prob.status, np.nan, np.nan
 
-    def learn_with_similarity_regularization(self,data,label,lam_vec,train_portion):
+    def learn_with_similarity_label_regularization(self,data,label,lam_vec,train_portion):
         """
         Implementation of the metric learning algorithm presented in our paper with l-1 regularization
         """
@@ -71,7 +71,7 @@ class MetricLearning:
         X_s = np.array([list(data[i][0] - data[i][1]) for i in index_s])
         X_ns = np.array([list(data[i][0] - data[i][1]) for i in index_ns])
         n_feature = data[0][0].shape[0]
-        
+
         misc = Miscellaneous()
         s_size = len(X_s)
         ns_size = len(X_ns)
@@ -83,7 +83,7 @@ class MetricLearning:
         X_s_test = X_s[int(s_size * train_portion):,:]
         X_ns_train = X_ns[:int(ns_size * train_portion),:]
         X_ns_test = X_ns[int(ns_size * train_portion):,:]
-       
+
         ratio = []
         dist_metric = []
         while 1:

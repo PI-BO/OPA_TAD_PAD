@@ -1,16 +1,20 @@
-import sys, os
-sys.path.append(os.path.abspath("./../utilities/"))
-sys.path.append(os.path.abspath("./../kward/"))
-sys.path.append(os.path.abspath("./../metric_learning/"))
-from helper import Utilities, PerformanceEvaluation
-import pandas as pd
-from metric_learning import MetricLearning
-from subsampling import Subsampling
-from user_feedback import Similarity
+import os, sys
+sys.path.append('../')
+
+from utilities.helper import Utilities, PerformanceEvaluation
+from metric_learning.metric_learning import MetricLearning
+from utilities.user_feedback import Similarity
+from utilities.subsampling import Subsampling
 from scipy.misc import comb
+
+import pandas as pd
 import numpy as np
 import pickle
+import requests
 import matplotlib.pyplot as plt
+import datetime as dt
+import logging
+import warnings
 
 
 # Initialization of some useful classes
@@ -21,6 +25,10 @@ mel = MetricLearning()
 # get the database to be published
 day_profile = pd.read_pickle('../dataset/dataframe_all_binary.pkl')
 day_profile = day_profile.iloc[0::4,0::60]#day_profile.iloc[0::4,0::60]
+
+
+with pd.option_context('display.max_rows', 1000, 'display.max_columns', 1000):
+    print(day_profile)
 rep_mode = 'mean'
 anonymity_level = 2 # desired anonymity level
 lam_vec = [1e-3,1e-2,1e-1,1,10]
@@ -86,7 +94,7 @@ for mc_i in range(mc_num):
         # sim = Similarity(data=pairdata)
         # sim.extract_interested_attribute(interest=interest, window=window)
         # pairdata_label,_ = sim.label_via_silhouette_analysis(range_n_clusters=range(2, 8))
-        dist_metric = mel.learn_with_simialrity_label_regularization(data=pairdata,
+        dist_metric = mel.learn_with_similarity_label_regularization(data=pairdata,
                                                                      label=pairdata_label,
                                                                      lam_vec=lam_vec,
                                                                      train_portion=0.8)
@@ -147,7 +155,7 @@ for mc_i in range(mc_num):
         similarity_label = similarity_label_all_series.loc[pairdata_idx].tolist()
         pairdata_label_active_mc = pairdata_label_active_mc + similarity_label
         # _, _, dist_metric = mel.learn_with_similarity_label(pairdata_active_mc, pairdata_label_active_mc, "diag", lam_vec)
-        dist_metric = mel.learn_with_simialrity_label_regularization(data=pairdata_active_mc,
+        dist_metric = mel.learn_with_similarity_label_regularization(data=pairdata_active_mc,
                                                                      label=pairdata_label_active_mc,
                                                                      lam_vec=lam_vec,
                                                                      train_portion=0.8)
