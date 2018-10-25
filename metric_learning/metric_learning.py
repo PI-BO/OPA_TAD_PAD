@@ -4,7 +4,7 @@ import itertools
 import cvxpy as cvx
 import numpy as np
 import pdb
-from cvxpy import SCS, MOSEK, norm,sqrt, sum_entries, mul_elemwise
+from cvxpy import SCS, MOSEK, norm,sqrt
 import numpy as np
 import logging
 
@@ -27,10 +27,10 @@ class MetricLearning:
             x = cvx.Variable(rows=n_feature, cols=1)
             obj = 0
             for i in range(len(X_s)):
-                obj = obj + sum_entries(mul_elemwise(np.square(X_s[i]), x))
+                obj = obj + cvx.sum_entries(mul_elemwise(np.square(X_s[i]), x))
             obj_neg = 0
             for i in range(len(X_ns)):
-                obj_neg = obj_neg + sqrt(sum_entries(mul_elemwise(np.square(X_ns[i]), x)))
+                obj_neg = obj_neg + sqrt(cvx.sum_entries(cvx.mul_elemwise(np.square(X_ns[i]), x)))
             obj = obj - cvx.log(obj_neg)
             obj = obj + lam * norm(x, 1)
             constraints = [x >= 0]
@@ -89,7 +89,7 @@ class MetricLearning:
         while 1:
             for lam in lam_vec:
                 # train
-                A = cvx.Semidef(n_feature)
+                A = cvx.Variable((n_feature, n_feature), PSD=True)
                 obj = 0
                 for i in range(int(s_size * train_portion)):
                     obj = obj + cvx.quad_form(X_s_train[i,:], A)

@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import keras
 from keras.models import Sequential, Model
-from keras.layers import Dense, Dropout, Activation, Add, Merge
+from keras.layers import Dense, Dropout, Activation, Add
 from keras.optimizers import RMSprop
 from keras.layers import Conv1D, GlobalMaxPooling1D, Embedding
 from keras.preprocessing import sequence
@@ -23,7 +23,7 @@ from keras.constraints import maxnorm
 # from keras_diagram import ascii
 from keras.callbacks import ModelCheckpoint
 from keras.regularizers import l1_l2
-from user_feedback import Similarity
+from utilities.user_feedback import Similarity
 np.random.seed(0)
 
 class Deep_Metric:
@@ -201,7 +201,7 @@ class Deep_Metric:
 
     def euclideanSqDistance(self, inputs):
         if (len(inputs) != 2):
-            raise 'oops'
+            raise Exception('oops')
 
         output = K.mean(K.square(inputs[0] - inputs[1]), axis=-1)
         output = K.expand_dims(output, 1)
