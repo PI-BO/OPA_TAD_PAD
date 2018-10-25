@@ -73,7 +73,8 @@ class Subsampling:
             for i in unsample_idx:
                 pair_index = self.pair_index_all[i]
                 pair = self.get_pairdata(pair_subsample_index=[pair_index])
-                uncertainty = self.get_uncertainty_entropy_deep(pair=pair[0], dist_metric=dist_metric, mu=0)
+                # uncertainty = self.get_uncertainty_entropy_deep(pair=pair[0], dist_metric=dist_metric, mu=0)
+                uncertainty = self.get_uncertainty_entropy(pair=pair[0], dist_metric=dist_metric, mu=0)
                 # uncertainty = self.get_uncertainty_probability_difference(pair=pair[0], dist_metric=dist_metric, mu=0)
                 uncertainty_vec.append(uncertainty)
             # pdb.set_trace()
@@ -95,6 +96,8 @@ class Subsampling:
         print(pair)        
         print(type(dist_metric))
         print(dist_metric)
+
+        # dist_metricObject = metric_learning.deep.Deep_Metric1(dist_metric)
         dist = dist_metric.transform(pair)
         # pdb.set_trace()]
         if not np.isscalar(dist):
