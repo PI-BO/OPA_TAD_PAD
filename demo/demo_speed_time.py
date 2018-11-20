@@ -30,6 +30,7 @@ endData = 1
 
 k_init = 10
 batch_size = 20
+batch_size_unif = 20
 mc_num = 5
 
 rep_mode = 'mean'
