@@ -21,7 +21,6 @@ warnings.filterwarnings("ignore")
 
 # set default values
 logDir = "./log"
-restUri ="http://sr-labor.dd-dns.de:8080/rwsdatagathering/funktionen/getalldata"
 resultDir = "./result"
 
 # set the start and end time of the day profile to load in hours
@@ -89,69 +88,34 @@ util = Utilities()
 pe = PerformanceEvaluation()
 mel = MetricLearning()
 
-# get the database to be published
-r = requests.get(restUri).json()
-columnList = []
-for i in range(0,1440):
-    columnList.append(str(i))
+# Read CSV File   
+df = pd.read_csv('./dataset/generated_speed.csv', sep=';', header=None)
+day_profile = pd.DataFrame(columns=df.columns)
 
-day_profile = pd.DataFrame(columns=columnList)
-day_profile.columns.names = ['timeIndex']
-
-i = 0
-index = 0
-numberOfTrips = 0
-
-newDataCollectionId = -1
-oldDataCollectionId = -1
-liste = []
-for j in range(0,1440):
-    liste.append(0.0)
-
-for jo in r:
-    numberOfTrips+=1
-    newDataCollectionId = jo["datensammlung_id"]
-
-    if oldDataCollectionId != newDataCollectionId:
-        if numberOfTrips >= 5 and i <= 19:
-            day_profile.loc[i] = liste
-            i+=1
-            numberOfTrips = 0
-            index=0
-
+# Create Day Profil with classID's
+for row_index,row in df.iterrows():
+    list = [] 
+    for index, speed in row.iteritems():  
+        if speed == 0:
+            classId = 1.0
+        elif speed > 0 and speed <= 40:
+            classId = 2.0
+        elif speed > 40 and speed <= 60:
+            classId = 3.0
+        elif speed > 60 and speed <= 90:
+            classId = 4.0
+        elif speed > 90 and speed <= 120:
+            classId = 5.0
+        elif speed > 120 and speed <= 140:
+            classId = 6.0
+        elif speed > 140:
+            classId = 7.0
         else:
-            liste = []
-            for j in range(0, 1440):
-                liste.append(0.0)
-                index = 0
+            classId = 0.0
+        list.append(classId)
+    day_profile.loc[row_index] = list
 
-    oldDataCollectionId = newDataCollectionId
-    #time = dt.timedelta(seconds=jo["timestamp"]/1000)
-    #minute = (time.seconds % 3600) // 60
-
-    speed = jo["geschwindigkeit"]
-    classId = 0.0
-    if speed == 0:
-        classId = 1.0
-    elif speed > 0 and speed <= 40:
-        classId = 2.0
-    elif speed > 40 and speed <= 60:
-        classId = 3.0
-    elif speed > 60 and speed <= 90:
-        classId = 4.0
-    elif speed > 90 and speed <= 120:
-        classId = 5.0
-    elif speed > 120 and speed <= 140:
-        classId = 6
-    elif speed > 140:
-        classId = 7
-    else:
-        classId = 0.0
-  
-    liste[index] = classId
-    index+=1
-
-day_profile = day_profile.iloc[:100,beginData * 60:endData * 60]
+#day_profile = day_profile.iloc[0::1,0::1] # row, column
 logger.debug(day_profile)
 
 # pre-sanitize the database
@@ -329,4 +293,6 @@ plt.errorbar(eval_k,loss_active_mean[eval_k-k_init],np.std(loss_iters_active_for
 #     plt.plot(eval_k,loss_iters_unif_format[i,:],label='uniform sample', color='blue')
 plt.plot((k_init,subsample_size_max),(loss_generic_metric,loss_generic_metric),'r--',label="generic metric")
 plt.legend()
+plt.xlabel("Number of labeled data pairs")
+plt.ylabel("Information loss")
 plt.show()
