@@ -23,14 +23,10 @@ warnings.filterwarnings("ignore")
 logDir = "./log"
 resultDir = "./result"
 
-# set the start and end time of the day profile to load in hours
-beginData = 0
-endData = 1
-
 k_init = 10
 batch_size = 20
 batch_size_unif = 20
-mc_num = 5
+mc_num = 1
 
 rep_mode = 'mean'
 # desired anonymity level
@@ -44,7 +40,7 @@ lam_vec = [1e-3,1e-2,1e-1,1,10]
 # capturing the user's interest
 interest = 'segment'
 # window specifies the starting and ending time of the period that the data user is interested in
-window = [2,10]
+window = [7,10]
 
 # create logger with script name
 logger = logging.getLogger(__name__)
@@ -75,7 +71,6 @@ else:
     # add the file handler to the logger
     logger.addHandler(fh)
 
-
 # create result dir if it not exists
 if not os.path.exists(resultDir):
     try:
@@ -96,26 +91,26 @@ day_profile = pd.DataFrame(columns=df.columns)
 for row_index,row in df.iterrows():
     list = [] 
     for index, speed in row.iteritems():  
-        if speed == 0:
+        if speed > 0:
             classId = 1.0
-        elif speed > 0 and speed <= 40:
-            classId = 2.0
-        elif speed > 40 and speed <= 60:
-            classId = 3.0
-        elif speed > 60 and speed <= 90:
-            classId = 4.0
-        elif speed > 90 and speed <= 120:
-            classId = 5.0
-        elif speed > 120 and speed <= 140:
-            classId = 6.0
-        elif speed > 140:
-            classId = 7.0
+        # elif speed > 0 and speed <= 40:
+        #     classId = 2.0
+        # elif speed > 40 and speed <= 60:
+        #     classId = 3.0
+        # elif speed > 60 and speed <= 90:
+        #     classId = 4.0
+        # elif speed > 90 and speed <= 120:
+        #     classId = 5.0
+        # elif speed > 120 and speed <= 140:
+        #     classId = 6.0
+        # elif speed > 140:
+        #     classId = 7.0
         else:
             classId = 0.0
         list.append(classId)
     day_profile.loc[row_index] = list
 
-#day_profile = day_profile.iloc[0::1,0::1] # row, column
+day_profile = day_profile.iloc[0::2,0::1] # row, column
 logger.debug(day_profile)
 
 # pre-sanitize the database
@@ -280,6 +275,9 @@ loss_iters_unif_format = np.asarray(loss_iters_unif)
 loss_unif_mean = np.mean(loss_iters_unif,axis=0)
 eval_k = np.arange(k_init,subsample_size_max+1,batch_size_unif)
 
+# Define the label of the plot
+plotTitel = __file__[0:-3] + " " + dt.datetime.now().strftime("%Y%m%d_%H%M%S")
+plotSubTitel = "data sets: " +  str(len(day_profile)) + "\tmc_num: " + str(mc_num) + "\tanonymity_level: " + str(anonymity_level)
 
 plt.figure()
 plt.errorbar(eval_k,loss_unif_mean,np.std(loss_iters_unif_format,axis=0),label='uniform sampling')
@@ -295,4 +293,6 @@ plt.plot((k_init,subsample_size_max),(loss_generic_metric,loss_generic_metric),'
 plt.legend()
 plt.xlabel("Number of labeled data pairs")
 plt.ylabel("Information loss")
+plt.title(plotTitel)
+plt.suptitle(plotSubTitel)  # Add a title so we know which it is
 plt.show()
