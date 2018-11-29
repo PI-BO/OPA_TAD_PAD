@@ -277,7 +277,7 @@ eval_k = np.arange(k_init,subsample_size_max+1,batch_size_unif)
 
 # Define the label of the plot
 plotTitel = __file__[0:-3] + " " + dt.datetime.now().strftime("%Y%m%d_%H%M%S")
-plotSubTitel = "data sets: " +  str(len(day_profile)) + "\tmc_num: " + str(mc_num) + "\tanonymity_level: " + str(anonymity_level)
+plotSubTitel = "data sets: " +  str(len(day_profile)) + " | mc_num: " + str(mc_num) + " | anonymity_level: " + str(anonymity_level)
 
 plt.figure()
 plt.errorbar(eval_k,loss_unif_mean,np.std(loss_iters_unif_format,axis=0),label='uniform sampling')
