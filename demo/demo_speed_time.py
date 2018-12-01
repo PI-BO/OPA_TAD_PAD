@@ -65,9 +65,9 @@ def main(argv):
             logger.error("Cannot create directory %s"% logDir)
     # create file handler which logs even debug messages
     try:
-        fh = logging.FileHandler(logDir + "/" + os.path.splitext(__file__)[0] + "_" + dt.datetime.now().strftime("%Y%m%d_%H%M%S") + ".log")
+        fh = logging.FileHandler(logDir + "/" + os.path.basename(__file__[0:-3]) + "_" + dt.datetime.now().strftime("%Y%m%d_%H%M%S") + ".log")
     except:
-        logger.error("Cannot create file: %s/%s_%s.log"% (logDir, os.path.splitext(__file__)[0], dt.datetime.now().strftime("%Y%m%d_%H%M%S")))
+        logger.error("Cannot create file: %s/%s_%s.log"% (logDir, os.path.basename(__file__[0:-3]), dt.datetime.now().strftime("%Y%m%d_%H%M%S")))
     else:
         fh.setLevel(logging.DEBUG)
         # add formatter it to the file handler
@@ -80,7 +80,7 @@ def main(argv):
         try:
             os.makedirs(resultDir)
         except OSError:
-            logger.error("Cannot create directory: %s"% logDir)
+            logger.error("Cannot create directory: %s"% resultDir)
 
     # Initialization of some useful classes
     util = Utilities()
@@ -91,11 +91,11 @@ def main(argv):
     try:
         opts, args = getopt.getopt(argv,"hi:a:m:")
     except getopt.GetoptError:
-        print (__file__,' -i <inputfile> -a <anonymity level> -m <mc num>')
+        print (__file__,' -i <input file> -a <anonymity level> -m <mc num>')
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print (__file__,' -i <inputfile> -a <anonymity level> -m <mc num>')
+            print (__file__,' -i <input file> -a <anonymity level> -m <mc num>')
             sys.exit()
         elif opt == '-i':
             inputfile = arg
@@ -110,7 +110,7 @@ def main(argv):
                 logger.error("mc num must be between 1 and 5")  
 
     # Log console parameters
-    logger.info("Input: %s, anonymity level: %i, mc num: %i"% (inputfile, anonymity_level, mc_num))
+    logger.info("input file: %s, anonymity level: %i, mc num: %i"% (inputfile, anonymity_level, mc_num))
 
     # Read CSV File   
     df = pd.read_csv(inputfile, sep=';', header=None)
@@ -217,11 +217,11 @@ def main(argv):
 
 
     try:
-        with open(resultDir + "/" + os.path.splitext(__file__)[0] +"_loss_uniform_cv.pickle", "wb") as f:
+        with open(resultDir + "/" + os.path.basename(__file__[0:-3]) +"_loss_uniform_cv.pickle", "wb") as f:
             pickle.dump([loss_iters_unif,k_init,subsample_size_max,batch_size,loss_generic_metric,
                         pairdata_all,pairlabel_all], f)
     except:
-        logger.error("Cannot create file: %s/%s_loss_uniform_cv.pickle"% (resultDir,os.path.splitext(__file__)[0]))
+        logger.error("Cannot create file: %s/%s_loss_uniform_cv.pickle"% (resultDir, os.path.basename(__file__[0:-3])))
 
     ##################
     # active learning
@@ -277,26 +277,26 @@ def main(argv):
 
 
     try:
-        with open(resultDir + "/loss_active_cv.pickle", "wb") as f:
+        with open(resultDir + "/" + os.path.basename(__file__[0:-3]) + "_loss_active_cv.pickle", "wb") as f:
             pickle.dump([loss_iters_active,k_init,subsample_size_max,batch_size,loss_generic_metric,
                         pairdata_all_active,pairlabel_all_active], f)
     except:
-        logger.error("Cannot create file: %s/loss_active_cv.pickle"% resultDir)
+        logger.error("Cannot create file: %s/%s_loss_active_cv.pickle"% (resultDir, os.path.basename(__file__[0:-3])))
 
     # plot
     try:
-        with open(resultDir + "/loss_active_lam1_diag.pickle", "rb") as f:
+        with open(resultDir + "/" + os.path.basename(__file__[0:-3]) + "_loss_active_lam1_diag.pickle", "rb") as f:
             loss_iters_active, k_init, subsample_size_max, batch_size, loss_generic_metric = \
                 pickle.load(f)
     except:
-        logger.error("Cannot create file: %s/loss_active_lam1_diag.pickle"% resultDir)
+        logger.error("Cannot create file: %s/%s_loss_active_lam1_diag.pickle"% (resultDir, os.path.basename(__file__[0:-3])))
 
     try:
-        with open(resultDir + "/loss_uniform_lam1_diag.pickle", "rb") as f:
+        with open(resultDir + "/" + os.path.basename(__file__[0:-3]) +"_loss_uniform_lam1_diag.pickle", "rb") as f:
             loss_iters_unif, k_init_unif, subsample_size_max_unif, batch_size_unif, loss_generic_metric_unif = \
                 pickle.load(f)
     except:
-        logger.error("Cannot create file: %s/loss_uniform_lam1_diag.pickle"% resultDir)
+        logger.error("Cannot create file: %s/%s_loss_uniform_lam1_diag.pickle"% (resultDir, os.path.basename(__file__[0:-3])))
 
     loss_iters_active_format = np.asarray(loss_iters_active)
     loss_active_mean = np.mean(loss_iters_active_format,axis=0)
