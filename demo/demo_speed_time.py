@@ -20,12 +20,30 @@ import warnings
 # ignore warnings
 warnings.filterwarnings("ignore")
 
+# speed_class methode: returns the classId depending on the number of classes
+def speed_class(numberClasses, speed):
+    # define the classes boundaries depending on the number of classes. numberClasse:[startBoundarie1,endBoundarie1/startBoundarie2,endBoundarie2...]
+    classBoundarie = {2:[0,0,300],8:[0,0,40,60,90,120,140,300]}
+
+    for index, boundarie in enumerate(classBoundarie[numberClasses]):
+        if index + 1 < len(classBoundarie[numberClasses]):
+            if speed == 0:
+                return 0
+            elif speed > classBoundarie[numberClasses][index] and speed <= classBoundarie[numberClasses][index+1]:
+                return index
+        else:
+            return -1
+
+# Main methode
 def main(argv):
     inputfile = ''
 
     # set default values
     logDir = './log'
     resultDir = './result'
+
+    # number of classes
+    numberClasses = 2
 
     k_init = 10
     batch_size = 20
@@ -89,28 +107,32 @@ def main(argv):
 
     # Read console parameters
     try:
-        opts, args = getopt.getopt(argv,"hi:a:m:")
+        opts, args = getopt.getopt(argv,"hi:a:m:c:")
     except getopt.GetoptError:
-        print (__file__,' -i <input file> -a <anonymity level> -m <mc num>')
+        print (__file__,' -i <input file> -a <anonymity level> -m <mc num> -c <number of classes>')
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print (__file__,' -i <input file> -a <anonymity level> -m <mc num>')
+            print (__file__,' -i <input file> -a <anonymity level> -m <mc num> -c <number of classes>')
             sys.exit()
         elif opt == '-i':
             inputfile = arg
         elif opt == '-a':
             anonymity_level = int(arg)
-            if anonymity_level < 2 or anonymity_level > 10:
+            if anonymity_level <= 2 and anonymity_level >= 10:
                 logger.error("anonymity level must be between 2 and 10")
                 sys.exit()
         elif opt == '-m':
             mc_num = int(arg) 
-            if mc_num < 1 and mc_num > 5:
-                logger.error("mc num must be between 1 and 5")  
+            if mc_num <= 1 and mc_num >= 5:
+                logger.error("mc num must be between 1 and 5")
+        elif opt == '-c':
+            numberClasses = int(arg) 
+            if numberClasses <= 2 and numberClasses >= 8:
+                logger.error("number of classes must be between 2 and 8")  
 
     # Log console parameters
-    logger.info("input file: %s, anonymity level: %i, mc num: %i"% (inputfile, anonymity_level, mc_num))
+    logger.info("input file: %s, anonymity level: %i, mc num: %i, number of classes: %i"% (inputfile, anonymity_level, mc_num, numberClasses))
 
     # Read CSV File   
     df = pd.read_csv(inputfile, sep=';', header=None)
@@ -120,23 +142,7 @@ def main(argv):
     for row_index,row in df.iterrows():
         list = [] 
         for index, speed in row.iteritems():  
-            if speed > 0:
-                classId = 1.0
-            # elif speed > 0 and speed <= 40:
-            #     classId = 2.0
-            # elif speed > 40 and speed <= 60:
-            #     classId = 3.0
-            # elif speed > 60 and speed <= 90:
-            #     classId = 4.0
-            # elif speed > 90 and speed <= 120:
-            #     classId = 5.0
-            # elif speed > 120 and speed <= 140:
-            #     classId = 6.0
-            # elif speed > 140:
-            #     classId = 7.0
-            else:
-                classId = 0.0
-            list.append(classId)
+            list.append(speed_class(numberClasses, speed))
         day_profile.loc[row_index] = list
 
     day_profile = day_profile.iloc[0::2,0::1] # row, column
@@ -306,7 +312,7 @@ def main(argv):
 
     # Define the label of the plot
     plotTitel = os.path.splitext(__file__)[0] + " " + dt.datetime.now().strftime("%Y%m%d_%H%M%S")
-    plotSubTitel = "data sets: " +  str(len(day_profile)) + " | mc_num: " + str(mc_num) + " | anonymity_level: " + str(anonymity_level)
+    plotSubTitel = "data sets: " +  str(len(day_profile)) + " | mc num: " + str(mc_num) + " | anonymity level: " + str(anonymity_level + "number of classes: " + str(numberClasses))
 
     plt.figure()
     plt.errorbar(eval_k,loss_unif_mean,np.std(loss_iters_unif_format,axis=0),label='uniform sampling')
