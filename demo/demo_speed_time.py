@@ -322,8 +322,10 @@ def main(argv):
     loss_unif_mean = np.mean(loss_iters_unif,axis=0)
     eval_k = np.arange(k_init,subsample_size_max+1,batch_size_unif)
 
+    # load the cpu time from shell
+    cpuTime = os.popen("ps -e | grep " + str(os.getpid()) + " | awk {'print $3'}").read().split()[0]
     # Define the label of the plot
-    plotTitel = os.path.splitext(__file__)[0] + " " + dt.datetime.now().strftime("%Y%m%d_%H%M%S") + " input file: " + input
+    plotTitel = os.path.splitext(__file__)[0] + "CPU time: " + cpuTime + " input file: " + input
     plotSubTitel = "data sets: " +  str(len(day_profile)) + " | mc num: " + str(mc_num) + " | anonymity level: " + str(anonymity_level + "number of classes: " + str(numberClasses))
 
     plt.figure()
