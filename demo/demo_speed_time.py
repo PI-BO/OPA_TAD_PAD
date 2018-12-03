@@ -326,7 +326,7 @@ def main(argv):
     cpuTime = os.popen("ps -e | grep " + str(os.getpid()) + " | awk {'print $3'}").read().split()[0]
     # Define the label of the plot
     plotTitel = os.path.splitext(__file__)[0] + "CPU time: " + cpuTime + " input file: " + inputfile
-    plotSubTitel = "data sets: " +  str(len(day_profile)) + " | mc num: " + str(mc_num) + " | anonymity level: " + str(anonymity_level + "number of classes: " + str(numberClasses))
+    plotSubTitel = "data sets: " +  str(len(day_profile)) + " | mc num: " + str(mc_num) + " | anonymity level: " + str(anonymity_level) + "number of classes: " + str(numberClasses)
 
     plt.figure()
     plt.errorbar(eval_k,loss_unif_mean,np.std(loss_iters_unif_format,axis=0),label='uniform sampling')
