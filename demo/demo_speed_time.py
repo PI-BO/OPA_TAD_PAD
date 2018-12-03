@@ -36,11 +36,11 @@ def speed_class(numberClasses, speed):
 
 # Main methode
 def main(argv):
-    inputfile = ''
 
     # set default values
     logDir = './log'
     resultDir = './result'
+    inputfile = ''  
 
     # number of classes
     numberClasses = 2
@@ -62,7 +62,7 @@ def main(argv):
     # capturing the user's interest
     interest = 'segment'
     # window specifies the starting and ending time of the period that the data user is interested in
-    window = [7,10]
+    window = [11,15]
 
     # create logger with script name
     logger = logging.getLogger(__name__)
@@ -132,20 +132,32 @@ def main(argv):
                 logger.error("number of classes must be between 2 and 8")  
 
     # Log console parameters
-    logger.info("input file: %s, anonymity level: %i, mc num: %i, number of classes: %i"% (inputfile, anonymity_level, mc_num, numberClasses))
+    logger.info("input file: %s,  anonymity level: %i, mc num: %i, number of classes: %i"% (inputfile, anonymity_level, mc_num, numberClasses))
 
-    # Read CSV File   
-    df = pd.read_csv(inputfile, sep=';', header=None)
-    day_profile = pd.DataFrame(columns=df.columns)
+    if inputfile[-4:] == '.pkl':
+        # get the database to be published
+        # ../dataset/dataframe_all_binary.pkl
+        day_profile = pd.read_pickle(inputfile)
+        day_profile = day_profile.iloc[0::4,0::60]#day_profile.iloc[0::4,0::60]
 
-    # Create Day Profil with classID's
-    for row_index,row in df.iterrows():
-        list = [] 
-        for index, speed in row.iteritems():  
-            list.append(speed_class(numberClasses, speed))
-        day_profile.loc[row_index] = list
+    elif inputfile[-4:] == '.csv':
+        # Read CSV File   
+        df = pd.read_csv(inputfile, sep=';', header=None)
+        day_profile = pd.DataFrame(columns=df.columns)
 
-    day_profile = day_profile.iloc[0::2,0::1] # row, column
+        # Create Day Profil with classID's
+        for row_index,row in df.iterrows():
+            list = [] 
+            for index, speed in row.iteritems():  
+                list.append(speed_class(numberClasses, speed))
+            day_profile.loc[row_index] = list
+
+        day_profile = day_profile.iloc[0::2,0::1] # row, column
+    else:
+        logger.error("input file not valid with %s"% inputfile[-4:])
+        sys.exit()
+
+
     logger.debug(day_profile)
 
     # pre-sanitize the database
@@ -311,7 +323,7 @@ def main(argv):
     eval_k = np.arange(k_init,subsample_size_max+1,batch_size_unif)
 
     # Define the label of the plot
-    plotTitel = os.path.splitext(__file__)[0] + " " + dt.datetime.now().strftime("%Y%m%d_%H%M%S")
+    plotTitel = os.path.splitext(__file__)[0] + " " + dt.datetime.now().strftime("%Y%m%d_%H%M%S") + " input file: " + input
     plotSubTitel = "data sets: " +  str(len(day_profile)) + " | mc num: " + str(mc_num) + " | anonymity level: " + str(anonymity_level + "number of classes: " + str(numberClasses))
 
     plt.figure()
