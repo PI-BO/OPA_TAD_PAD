@@ -48,7 +48,7 @@ def main(argv):
     k_init = 10
     batch_size = 20
     batch_size_unif = 20
-    mc_num = 1
+    mc_num = 5
 
     rep_mode = 'mean'
     # desired anonymity level
@@ -322,8 +322,13 @@ def main(argv):
     loss_unif_mean = np.mean(loss_iters_unif,axis=0)
     eval_k = np.arange(k_init,subsample_size_max+1,batch_size_unif)
 
-    # load the cpu time from shell
-    cpuTime = os.popen("ps -e | grep " + str(os.getpid()) + " | awk {'print $3'}").read().split()[0]
+    # check platform
+    if sys.platform  == "linux" or sys.platform == "linux2" or sys.platform == "darwin":
+        # load the cpu time from shell
+        cpuTime = os.popen("ps -e | grep " + str(os.getpid()) + " | awk {'print $3'}").read().split()[0]
+    else:
+        cpuTime = 'n/a'
+    
     # Define the label of the plot
     plotSubTitel = os.path.splitext(__file__)[0] + " | cpu time: " + cpuTime + " | input file: " + inputfile
     plotTitel = "data sets: " +  str(len(day_profile)) + " | mc num: " + str(mc_num) + " | anonymity level: " + str(anonymity_level) + " | number of classes: " + str(numberClasses)
