@@ -330,7 +330,7 @@ def main(argv):
         cpuTime = 'n/a'
     
     # Define the label of the plot
-    plotSubTitel = os.path.splitext(__file__)[0] + " | cpu time: " + cpuTime + " | input file: " + inputfile
+    plotSubTitel = "python: " + os.path.basename(__file__[0:-3]) + " | cpu time: " + cpuTime + " | input file: " + inputfile
     plotTitel = "data sets: " +  str(len(day_profile)) + " | mc num: " + str(mc_num) + " | anonymity level: " + str(anonymity_level) + " | number of classes: " + str(numberClasses)
 
     plt.figure()
