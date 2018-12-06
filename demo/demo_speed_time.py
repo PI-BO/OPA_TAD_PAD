@@ -11,7 +11,6 @@ from scipy.misc import comb
 import pandas as pd
 import numpy as np
 import pickle
-import requests
 import matplotlib.pyplot as plt
 import datetime as dt
 import logging
@@ -48,11 +47,11 @@ def main(argv):
     k_init = 10
     batch_size = 20
     batch_size_unif = 20
-    mc_num = 5
+    mc_num = 5 # Number of Monte-Carlo-Simulation's 800-812
 
-    rep_mode = 'mean'
+    rep_mode = 'mean' # mean, mean-round, median
     # desired anonymity level
-    anonymity_level = 2
+    anonymity_level = 2 # k-groups 594-611
     lam_vec = [1e-3,1e-2,1e-1,1,10]
 
     # data user specifies his/her interest. In the example, the data user is interested in preserving the
@@ -60,9 +59,9 @@ def main(argv):
     # ending time of the time series segment of interest.
 
     # capturing the user's interest
-    interest = 'segment'
+    interest = 'segment' # arrival, depature, usage, window-usage, segmet
     # window specifies the starting and ending time of the period that the data user is interested in
-    window = [11,15]
+    window = [11,15] # 800-812
 
     # create logger with script name
     logger = logging.getLogger(__name__)
@@ -119,8 +118,8 @@ def main(argv):
             inputfile = arg
         elif opt == '-a':
             anonymity_level = int(arg)
-            if anonymity_level <= 2 and anonymity_level >= 10:
-                logger.error("anonymity level must be between 2 and 10")
+            if anonymity_level <= 2 and anonymity_level >= 20:
+                logger.error("anonymity level must be between 2 and 20")
                 sys.exit()
         elif opt == '-m':
             mc_num = int(arg) 
@@ -170,7 +169,7 @@ def main(argv):
     subsample_size_max = int(comb(len(df_subsampled_from),2))
     logger.info('total number of pairs is %s' % subsample_size_max)
 
-    # # obtain ground truth similarity labels
+    # obtain ground truth similarity labels
     sp = Subsampling(data=df_subsampled_from)
 
     data_pair_all, data_pair_all_index = sp.uniform_sampling(subsample_size=subsample_size_max,seed=0)
@@ -196,7 +195,6 @@ def main(argv):
         loss_learned_metric_unif_mc = []
         pairdata_each_mc = []
         pairlabel_each_mc = []
-        dist_metric_mc = []
         k = k_init
         while k <= subsample_size_max:
             if k == k_init:
