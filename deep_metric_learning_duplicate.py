@@ -51,8 +51,8 @@ class Deep_Metric_Duplicate:
             model.add(Dropout(0.2))
         encoded_l = model(left_input)
         encoded_r = model(right_input)
-        both = merge([encoded_l,encoded_r],mode=euc_dist,output_shape=euc_dist_shape)
-        self.distance_model = Model(input=[left_input,right_input],outputs=both)
+        both = Lambda(euc_dist, output_shape=euc_dist_shape)([encoded_l, encoded_r])
+        self.distance_model = Model(inputs=[left_input,right_input],outputs=both)
 
         # optimizer
         learning_rate = 5e-3
