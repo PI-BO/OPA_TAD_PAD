@@ -43,7 +43,7 @@ class K_ward:
         """
         data = d_profile_data.copy()
         data = data.fillna(0)
-        data = data.as_matrix()
+        data = data.values
         data_size = data.shape[0]
         if self.distance_metric != 'self-defined':
 
@@ -81,7 +81,7 @@ class K_ward:
         df = pd.DataFrame(columns=['x', 'y', 'distance'])
         df['x'] = y.ravel()
         df['y'] = x.ravel()
-        df['distance'] = distance.as_matrix().ravel()
+        df['distance'] = distance.values.ravel()
 
         df = df[df['x'] != df['y']]
         df = df.sort_values('distance')
@@ -116,7 +116,7 @@ class K_ward:
             df_near_neighbors = df_sub.sort_values('distance',ascending=True).iloc[0:self.k-1]
 
             keys = np.concatenate([df_near_neighbors['y'].values, np.array([int(extreme_p)])])
-            values = self.data.loc[keys].as_matrix()
+            values = self.data.loc[keys].values
 
             new_group = Group(keys,values,self.rep_mode)
 
@@ -126,7 +126,7 @@ class K_ward:
 
         for key in group_assign_status.keys():
             if group_assign_status[key] == 0:
-                new_group = Group(id=[key], data=self.data.loc[key].as_matrix(), rep_mode=self.rep_mode)
+                new_group = Group(id=[key], data=self.data.loc[key].values, rep_mode=self.rep_mode)
                 self.add_group(new_group)
 
         self.cards = self.get_cards()
