@@ -6,7 +6,7 @@ import keras
 from keras.layers import Input,merge
 from keras.models import Sequential, Model
 from sklearn.preprocessing import StandardScaler
-from keras.layers.core import *
+from keras.layers.core import K, Dense, Dropout, Lambda
 from keras import optimizers
 import pandas as pd
 import pdb
