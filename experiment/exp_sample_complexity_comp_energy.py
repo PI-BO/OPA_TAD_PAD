@@ -10,11 +10,13 @@ from deep_metric_learning_duplicate import Deep_Metric_Duplicate
 import numpy as np
 import pickle
 
+# Disable SettingWithCopyWarning 
+pd.options.mode.chained_assignment = None  # default='warn'
+
 # set platform environ for Mac OS
 if sys.platform == "darwin":
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
         os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
-
 
 print('experiement sample complexity script')
 util = Utilities()

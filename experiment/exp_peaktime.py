@@ -1,4 +1,4 @@
-import sys; import os
+import sys, os
 sys.path.append(os.path.abspath("./"))
 
 from helper import Utilities, PerformanceEvaluation,prepare_data,get_ground_truth_distance
@@ -12,6 +12,13 @@ from deep_metric_learning_duplicate import Deep_Metric_Duplicate
 from subsampling import Subsampling
 import pdb
 
+# Disable SettingWithCopyWarning 
+pd.options.mode.chained_assignment = None  # default='warn'
+
+# set platform environ for Mac OS
+if sys.platform == "darwin":
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+        os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 print('peak time')
 def evaluate_peak_time(anonymity_level,df_subsampled_from,day_profile,interest,window):
