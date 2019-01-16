@@ -1,6 +1,4 @@
-        import sys;
-import os
-
+import os, sys
 sys.path.append(os.path.abspath("./"))
 from helper import Utilities, PerformanceEvaluation, prepare_data
 import pandas as pd
@@ -12,6 +10,10 @@ from deep_metric_learning_duplicate import Deep_Metric_Duplicate
 import numpy as np
 import pickle
 
+# set platform environ for Mac OS
+if sys.platform == "darwin":
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+        os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 print('experiement sample complexity script')
 util = Utilities()
