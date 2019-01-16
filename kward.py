@@ -83,7 +83,7 @@ class K_ward:
         df['y'] = x.ravel()
         df['distance'] = distance.values.ravel()
 
-        df = df[df['x'] != df['y']]
+        df = df.loc[df['x'] != df['y']]
         df = df.sort_values('distance')
         df.distance.loc[np.isnan(df.distance)] = 0
 
