@@ -65,6 +65,7 @@ temp/*
 
 #results from the FW
 results/*
+result_linear_new/*
 
 #datasets
 dataset/*
@@ -77,4 +78,6 @@ framework/run_configes/*
 #log
 log/
 result/
+
+#mac os files
 .DS_Store
