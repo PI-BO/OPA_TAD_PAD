@@ -142,8 +142,6 @@ def main(argv):
     day_profile_all = day_profile_all.fillna(0)
     res = 4
 
-    logger.debug(day_profile_all)
-
     # define use case
     interest = 'window-usage'
     window = [17, 21]
@@ -154,6 +152,15 @@ def main(argv):
     pub_size = 80
     day_profile = day_profile_all.iloc[:n_rows,0::res]
     day_profile_learning = day_profile_all.iloc[n_rows:n_rows+pub_size,0::res]
+
+        # log day_profil
+    logger.debug('====================')
+    logger.debug('day_profile')    
+    logger.debug(day_profile)
+        # log day_profil
+    logger.debug('====================')
+    logger.debug('day_profile_learning')    
+    logger.debug(day_profile_learning)
 
     sanitized_profile_best = util.sanitize_data(day_profile, distance_metric='self-defined',
                                             anonymity_level=anonymity_level, rep_mode=rep_mode,
