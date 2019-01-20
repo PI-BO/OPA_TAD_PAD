@@ -84,7 +84,7 @@ def main(argv):
  
     # Read console parameters
     try:
-        opts, args = getopt.getopt(argv,"hi:a:m:c:")
+        opts, args = getopt.getopt(argv,"hi:m:p")
     except getopt.GetoptError:
         print (__file__,' -i <input file> -m <mc num> -p')
         sys.exit(2)
