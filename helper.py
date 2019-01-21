@@ -111,7 +111,7 @@ class PerformanceEvaluation:
             for i in range(len(stat_gt)):
                 df = df.set_value(i, np.linalg.norm(stat_gt.iloc[i,:] - stat_sanitized.iloc[i,:]))
             # print(df)
-        df = df.as_matrix()
+        df = df.values
         err_sum_sqrt = np.mean(np.absolute(df))
         return err_sum_sqrt
 

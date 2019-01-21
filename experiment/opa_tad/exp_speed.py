@@ -22,20 +22,6 @@ if sys.platform == "darwin":
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
         os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
-# speed_class methode: returns the classId depending on the number of classes
-def speed_class(numberClasses, speed):
-    # define the classes boundaries depending on the number of classes. numberClasse:[startBoundarie1,endBoundarie1/startBoundarie2,endBoundarie2...]
-    classBoundarie = {2:[0,0,300],8:[0,0,40,60,90,120,140,300]}
-
-    for index, boundarie in enumerate(classBoundarie[numberClasses]):
-        if index + 1 < len(classBoundarie[numberClasses]):
-            if speed == 0:
-                return 0
-            elif speed > classBoundarie[numberClasses][index] and speed <= classBoundarie[numberClasses][index+1]:
-                return index
-        else:
-            return -1
-
 # Main methode
 def main(argv):
 
@@ -125,27 +111,27 @@ def main(argv):
         sys.exit() 
 
     if preSanitization:
-        logger.info('rush hour pre-senitization')
+        logger.info('speed pre-senitization')
     else:
-        logger.info('rush hour')
-
-    def evaluate_lunch_time(anonymity_level,df_subsampled_from,day_profile):
-        subsample_size_max = int(comb(len(df_subsampled_from), 2))
-        logger.info('total number of pairs is %s' % subsample_size_max)
+        logger.info('speed hour')
+      
+    def evaluate_peak_time(anonymity_level,df_subsampled_from,day_profile,interest,window):
         subsample_size = int(round(subsample_size_max))
         sp = Subsampling(data=df_subsampled_from)
-        data_pair, data_pair_all_index = sp.uniform_sampling(subsample_size=subsample_size, seed=0)
-
-        sim = Similarity(data=data_pair)
-        sim.extract_interested_attribute(interest=interest, window=window)
-        similarity_label, data_subsample = sim.label_via_silhouette_analysis(range_n_clusters=range(2, 8))
+        data_pair, data_pair_all_index = sp.uniform_sampling(subsample_size=subsample_size, seed=None)
 
         if preSanitization:
             data_train_portion = 0.5
+
+        sim = Similarity(data=data_pair)
+        sim.extract_interested_attribute(interest='statistics', stat_type=interest, window=window)
+        similarity_label, data_subsample = sim.label_via_silhouette_analysis(range_n_clusters=range(2, 8))
+
+        if preSanitization:
             x1_train, x2_train, y_train, x1_test, x2_test, y_test = prepare_data(data_pair,similarity_label,data_train_portion)
         else:
             x1_train, x2_train, y_train, x1_test, x2_test, y_test = prepare_data(data_pair,similarity_label,0.5)
-
+        
         lm = Deep_Metric_Duplicate(mode='linear')
         lm.train(x1_train,x2_train,y_train,x1_test,x2_test,y_test)
 
@@ -158,13 +144,13 @@ def main(argv):
         sanitized_profile_deep = util.sanitize_data(day_profile, distance_metric="deep", anonymity_level=anonymity_level,
                                                     rep_mode=rep_mode, deep_model=dm)
 
-        loss_learned_metric_linear = pe.get_information_loss(data_gt=day_profile,
-                                                    data_sanitized=sanitized_profile_linear.round(),
-                                                    window=window)
+        loss_learned_metric_linear = pe.get_statistics_loss(data_gt=day_profile,
+                                                        data_sanitized=sanitized_profile_linear.round(),
+                                                        mode=interest, window=window)
 
-        loss_learned_metric_deep = pe.get_information_loss(data_gt=day_profile,
+        loss_learned_metric_deep = pe.get_statistics_loss(data_gt=day_profile,
                                                         data_sanitized=sanitized_profile_deep.round(),
-                                                        window=window)
+                                                        mode=interest, window=window)
 
         if preSanitization:
             if data_train_portion == 1:
@@ -173,11 +159,12 @@ def main(argv):
                 distance_dm = np.nan
             else:
                 distance_gt = get_ground_truth_distance(x1_test,x2_test,mode=interest,window=window)
+                distance_lm = lm.d_test
+                distance_dm = dm.d_test
         else:
-            distance_gt = get_ground_truth_distance(x1_test,x2_test,mode='segment',window=window)
-
-        distance_lm = lm.d_test
-        distance_dm = dm.d_test
+            distance_gt = get_ground_truth_distance(x1_test,x2_test,mode=interest,window=window)
+            distance_lm = lm.d_test
+            distance_dm = dm.d_test
 
         # print('anonymity level %s' % anonymity_level)
         logger.info("sampled size %s" % subsample_size)
@@ -185,7 +172,7 @@ def main(argv):
         logger.info("information loss with generic metric %s" % loss_generic_metric)
         logger.info("information loss with learned metric %s" % loss_learned_metric_linear)
         logger.info("information loss with learned metric deep  %s" % (loss_learned_metric_deep))
-        # pdb.set_trace()
+
         return loss_learned_metric_linear,loss_learned_metric_deep,sanitized_profile_linear,sanitized_profile_deep,\
             distance_lm,distance_dm,distance_gt
 
@@ -195,31 +182,32 @@ def main(argv):
     pe = PerformanceEvaluation()
 
     # load dataset
+    day_profile_all = pd.read_pickle('dataset/dataframe_all_energy.pkl')
     day_profile_all = day_profile_all.fillna(0)
-    day_profile_all[day_profile_all > 0] = 1
-    res = 15
+    res = 4
 
     # define use case
-    interest = 'segment'
+    interest = 'window-usage'
+    window = [17, 21]
     rep_mode = 'mean'
-    window = [11, 15]  # window specifies the starting and ending time of the period that the data user is interested in
 
     # specify the data set for learning and for sanitization
-    n_rows = 80   
+    n_rows = 80
     day_profile = day_profile_all.iloc[:n_rows,0::res]
-    logger.debug(day_profile)
 
-    if not preSanitization: 
+    if not preSanitization:
         pub_size = n_rows
         day_profile_learning = day_profile_all.iloc[n_rows:n_rows+pub_size,0::res]
-        logger.debug(day_profile_learning)
+
+    logger.debug(day_profile)
+    logger.debug(day_profile_all)
 
     frac = 0.8
     anonymity_levels = np.arange(2,8)
-    losses_best = np.ones(len(anonymity_levels)) * np.nan
-    losses_generic = np.ones(len(anonymity_levels))* np.nan
-    losses_linear = np.ones((len(anonymity_levels),mc_num))* np.nan
-    losses_deep = np.ones((len(anonymity_levels),mc_num))* np.nan
+    losses_best = np.zeros(len(anonymity_levels))
+    losses_generic = np.zeros(len(anonymity_levels))
+    losses_linear = np.zeros((len(anonymity_levels),mc_num))
+    losses_deep = np.zeros((len(anonymity_levels),mc_num))
 
     distances_dm = {}
     distances_lm = {}
@@ -232,23 +220,23 @@ def main(argv):
                                                     mode=interest, window=window)
         sanitized_profile_baseline = util.sanitize_data(day_profile, distance_metric='euclidean',
                                                         anonymity_level=anonymity_level, rep_mode=rep_mode)
-        loss_best_metric = pe.get_information_loss(data_gt=day_profile, data_sanitized=sanitized_profile_best,
-                                                window=window)
-        loss_generic_metric = pe.get_information_loss(data_gt=day_profile,
-                                                    data_sanitized=sanitized_profile_baseline.round(),
-                                                    window=window)
+        loss_best_metric = pe.get_statistics_loss(data_gt=day_profile, data_sanitized=sanitized_profile_best,
+                                                mode=interest, window=window)
+        loss_generic_metric = pe.get_statistics_loss(data_gt=day_profile, data_sanitized=sanitized_profile_baseline,
+                                                    mode=interest, window=window)
         losses_best[i] = loss_best_metric
         losses_generic[i] = loss_generic_metric
 
         for mc_i in range(mc_num):
-
             if preSanitization:
                 df_subsampled_from = sanitized_profile_baseline.sample(frac=frac,replace=False, random_state=mc_i)
             else:
                 df_subsampled_from = day_profile_learning.sample(frac=frac,replace=False, random_state=mc_i)
-
+            subsample_size_max = int(comb(len(df_subsampled_from), 2))
+            logger.info('total number of pairs is %s' % subsample_size_max)
             loss_learned_metric_linear, loss_learned_metric_deep, sanitized_profile_linear, sanitized_profile_deep, \
-                distance_lm, distance_dm, distance_gt = evaluate_lunch_time(anonymity_level,df_subsampled_from,day_profile)
+                distance_lm, distance_dm, distance_gt = evaluate_peak_time(anonymity_level,df_subsampled_from,day_profile,
+                                                                        interest,window)
             losses_linear[i,mc_i] = loss_learned_metric_linear
             losses_deep[i,mc_i] = loss_learned_metric_deep
             distances_lm[(i,mc_i)] = distance_lm
@@ -257,17 +245,17 @@ def main(argv):
 
             logger.info('==========================')
             logger.info('anonymity level index %s'% i)
-            logger.info('mc iteration %s' % mc_i)
+            logger.info('mc iteration %s' % mc_i)     
        
-            try:
-                if preSanitization:
-                    with open(resultDir + '/' + os.path.basename(__file__[0:-3]) +'_presanitized.pickle', 'wb') as f:
-                        pickle.dump([anonymity_levels,losses_best,losses_generic,losses_linear,losses_deep,distances_lm,distances_dm,distances_gt], f)
-                else:
-                    with open(resultDir + '/' + os.path.basename(__file__[0:-3]) +'.pickle', 'wb') as f:
-                        pickle.dump([anonymity_levels,losses_best,losses_generic,losses_linear,losses_deep,distances_lm,distances_dm,distances_gt], f)
-            except:
-                logger.error('Cannot create file: %s/%s.pickle'% (resultDir, os.path.basename(__file__[0:-3])))
+        try:
+            if preSanitization:
+                with open(resultDir + '/' + os.path.basename(__file__[0:-3]) +'_presanitized.pickle', 'wb') as f:
+                    pickle.dump([anonymity_levels,losses_best,losses_generic,losses_linear,losses_deep,distances_lm,distances_dm,distances_gt], f)
+            else:
+                with open(resultDir + '/' + os.path.basename(__file__[0:-3]) +'.pickle', 'wb') as f:
+                    pickle.dump([anonymity_levels,losses_best,losses_generic,losses_linear,losses_deep,distances_lm,distances_dm,distances_gt], f)
+        except:
+            logger.error('Cannot create file: %s/%s.pickle'% (resultDir, os.path.basename(__file__[0:-3])))
 
 if __name__ == "__main__":
     main(sys.argv[1:])
