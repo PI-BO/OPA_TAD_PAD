@@ -22,6 +22,20 @@ if sys.platform == "darwin":
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
         os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
+# speed_class methode: returns the classId depending on the number of classes
+def speed_class(numberClasses, speed):
+    # define the classes boundaries depending on the number of classes. numberClasse:[startBoundarie1,endBoundarie1/startBoundarie2,endBoundarie2...]
+    classBoundarie = {2:[0,0,300],8:[0,0,40,60,90,120,140,300]}
+
+    for index, boundarie in enumerate(classBoundarie[numberClasses]):
+        if index + 1 < len(classBoundarie[numberClasses]):
+            if speed == 0:
+                return 0
+            elif speed > classBoundarie[numberClasses][index] and speed <= classBoundarie[numberClasses][index+1]:
+                return float(index)
+        else:
+            return -1
+
 # Main methode
 def main(argv):
 
@@ -29,8 +43,11 @@ def main(argv):
     logDir = './log'
     resultDir = './result'
     inputfile = './dataset/opa_tad/speed.csv' 
+    numberClasses = 0 
+    preSanitization = False 
+
     mc_num = 5
-    preSanitization = False
+    res = 4
   
     # create logger with script name
     logger = logging.getLogger(__name__)
@@ -70,13 +87,13 @@ def main(argv):
  
     # Read console parameters
     try:
-        opts, args = getopt.getopt(argv,"hi:m:p")
+        opts, args = getopt.getopt(argv,"hi:m:c:p")
     except getopt.GetoptError:
-        print (__file__,' -i <input file> -m <mc num> -p')
+        print (__file__,' -i <input file> -m <mc num> -p (pre-senitization) -c <number of classes>')
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print (__file__,' -i <input file> -m <mc num> -p')
+            print (__file__,' -i <input file> -m <mc num> -p (pre-senitization)  -c <number of classes>')
             sys.exit()
         elif opt == '-i':
             inputfile = arg        
@@ -84,16 +101,18 @@ def main(argv):
             mc_num = int(arg) 
             if mc_num <= 1 and mc_num >= 5:
                 logger.error("mc num must be between 1 and 5")
+        elif opt == '-c':
+            numberClasses = int(arg) 
+            if numberClasses <= 0 and numberClasses >= 8:
+                logger.error("number of classes must be between 0 and 8")  
         elif opt == '-p':
             preSanitization = True
 
     # Log console parameters
-    logger.info("input file: %s, mc num: %i, pre-senitization: %r"% (inputfile, mc_num, preSanitization ))
+    logger.info("input file: %s, mc num: %i, pre-senitization: %r, number of classes: %i"% (inputfile, mc_num, preSanitization, numberClasses))
 
-    if inputfile[-4:] == '.pkl':
-        #day_profile_all = pd.read_pickle('dataset/dataframe_all_energy.pkl')
+    if inputfile[-4:] == '.pkl': 
         day_profile_all = pd.read_pickle(inputfile)
-
     elif inputfile[-4:] == '.csv':
         # Read CSV File   
         df = pd.read_csv(inputfile, sep=';', header=None)
@@ -102,13 +121,17 @@ def main(argv):
         # Create Day Profil with classID's
         for row_index,row in df.iterrows():
             list = [] 
-            for index, speed in row.iteritems():  
-                #list.append(speed_class(numberClasses, speed))
-                list.append(speed)
+            for index, speed in row.iteritems():
+                if numberClasses == 0:
+                    list.append(speed)
+                else:
+                    list.append(speed_class(numberClasses, speed))
+
             day_profile_all.loc[row_index] = list
     else:
         logger.error('input file not valid with %s'% inputfile[-4:])
-        sys.exit() 
+        sys.exit()
+    day_profile_all = day_profile_all.fillna(0)  
 
     if preSanitization:
         logger.info('speed pre-senitization')
@@ -179,12 +202,7 @@ def main(argv):
 
     # Initialization of some useful classes
     util = Utilities()
-    pe = PerformanceEvaluation()
-
-    # load dataset
-    day_profile_all = pd.read_pickle('dataset/dataframe_all_energy.pkl')
-    day_profile_all = day_profile_all.fillna(0)
-    res = 4
+    pe = PerformanceEvaluation()  
 
     # define use case
     interest = 'window-usage'
