@@ -22,10 +22,15 @@ if sys.platform == "darwin":
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
         os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
-# speed_class methode: returns the classId depending on the number of classes
-def speed_class(numberClasses, speed):
-    # define the classes boundaries depending on the number of classes. numberClasse:[startBoundarie1,endBoundarie1/startBoundarie2,endBoundarie2...]
-    classBoundarie = {2:[0,0,300],8:[0,0,40,60,90,120,140,300]}
+# getClass methode: returns the classId depending on the number of classes
+def getClass(numberClasses, speed, numberVehicles):
+     # define the classes boundaries depending on the number of classes. numberClasse:[startBoundarie1,endBoundarie1/startBoundarie2,endBoundarie2...]
+    if not numberVehicles:
+        # speed       
+        classBoundarie = {2:[0,0,300],4:[0,0,60,120,300],5:[0,0,40,80,120,300],7:[0,0,40,60,90,120,140,300]}
+    else:
+        # number of vehicles
+        classBoundarie = {2:[0,0,100],3:[0,0,20,100],4:[0,0,15,25,100],5:[0,0,10,20,30,100]}
 
     for index, boundarie in enumerate(classBoundarie[numberClasses]):
         if index + 1 < len(classBoundarie[numberClasses]):
@@ -44,7 +49,8 @@ def main(argv):
     resultDir = './result'
     inputfile = './dataset/opa_tad/speed.csv' 
     numberClasses = 0 
-    preSanitization = False 
+    preSanitization = False
+    numberVehicles = False
 
     mc_num = 5
     res = 4
@@ -87,13 +93,13 @@ def main(argv):
  
     # Read console parameters
     try:
-        opts, args = getopt.getopt(argv,"hi:m:c:p")
+        opts, args = getopt.getopt(argv,"hi:m:c:pv")
     except getopt.GetoptError:
-        print (__file__,' -i <input file> -m <mc num> -p (pre-senitization) -c <number of classes>')
+        print (__file__,' -i <input file> -m <mc num> -c <number of classes> -p (pre-senitization) -v (number of vehicles)')
         sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print (__file__,' -i <input file> -m <mc num> -p (pre-senitization)  -c <number of classes>')
+            print (__file__,' -i <input file> -m <mc num> -c <number of classes> -p (pre-senitization) -v (number of vehicles)')
             sys.exit()
         elif opt == '-i':
             inputfile = arg        
@@ -107,9 +113,11 @@ def main(argv):
                 logger.error("number of classes must be between 0 and 8")  
         elif opt == '-p':
             preSanitization = True
+        elif opt == '-v':
+            numberVehicles = True
 
     # Log console parameters
-    logger.info("input file: %s, mc num: %i, pre-senitization: %r, number of classes: %i"% (inputfile, mc_num, preSanitization, numberClasses))
+    logger.info("input file: %s, mc num: %i, pre-senitization: %r, number of vehicles: %r, number of classes: %i"% (inputfile, mc_num, preSanitization, numberVehicles, numberClasses))
 
     if inputfile[-4:] == '.pkl': 
         day_profile_all = pd.read_pickle(inputfile)
@@ -121,13 +129,15 @@ def main(argv):
         # Create Day Profil with classID's
         for row_index,row in df.iterrows():
             list = [] 
-            for index, speed in row.iteritems():
+            for index, value in row.iteritems():
                 if numberClasses == 0:
-                    list.append(speed)
+                    list.append(value)
                 else:
-                    list.append(speed_class(numberClasses, speed))
+                    list.append(getClass(numberClasses, value, numberVehicles))
 
             day_profile_all.loc[row_index] = list
+        # reduces the number of columns as with pad
+        day_profile_all = day_profile_all.iloc[0::1,0::15]
     else:
         logger.error('input file not valid with %s'% inputfile[-4:])
         sys.exit()
@@ -263,17 +273,22 @@ def main(argv):
 
             logger.info('==========================')
             logger.info('anonymity level index %s'% i)
-            logger.info('mc iteration %s' % mc_i)     
-       
-        try:
+            logger.info('mc iteration %s' % mc_i)
+
+            fileName = 'exp_xyz'
+            fileName += os.path.basename(inputfile[0:-4]) 
+            if numberVehicles:
+                fileName = '_numberOfVehicles'   
             if preSanitization:
-                with open(resultDir + '/' + os.path.basename(__file__[0:-3]) +'_presanitized.pickle', 'wb') as f:
-                    pickle.dump([anonymity_levels,losses_best,losses_generic,losses_linear,losses_deep,distances_lm,distances_dm,distances_gt], f)
-            else:
-                with open(resultDir + '/' + os.path.basename(__file__[0:-3]) +'.pickle', 'wb') as f:
-                    pickle.dump([anonymity_levels,losses_best,losses_generic,losses_linear,losses_deep,distances_lm,distances_dm,distances_gt], f)
+                fileName += '_presanitized'
+            fileName += '_numberOfClasses_%i' %numberClasses
+            fileName += '.pickle'
+
+        try:            
+            with open(resultDir + '/' + fileName, 'wb') as f:
+                pickle.dump([anonymity_levels,losses_best,losses_generic,losses_linear,losses_deep,distances_lm,distances_dm,distances_gt], f)
         except:
-            logger.error('Cannot create file: %s/%s.pickle'% (resultDir, os.path.basename(__file__[0:-3])))
+            logger.error('Cannot create file: %s/%s.pickle'% (resultDir, fileName))
 
 if __name__ == "__main__":
     main(sys.argv[1:])
