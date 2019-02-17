@@ -137,16 +137,21 @@ def main(argv):
 
             day_profile_all.loc[row_index] = list
         # reduces the number of columns as with pad
-        day_profile_all = day_profile_all.iloc[0::1,0::15]
+        if numberClasses == 2:
+            res = 15
+        else:
+            day_profile_all = day_profile_all.iloc[0::1,0::15]
     else:
         logger.error('input file not valid with %s'% inputfile[-4:])
         sys.exit()
     day_profile_all = day_profile_all.fillna(0)  
 
-    if preSanitization:
-        logger.info('speed pre-senitization')
+    if numberClasses == 2:
+        logger.info('rush hour')
     else:
-        logger.info('speed hour')
+        logger.info('peak hour')
+    if preSanitization:
+        logger.info('pre-senitization')
       
     def evaluate_peak_time(anonymity_level,df_subsampled_from,day_profile,interest,window):
         subsample_size = int(round(subsample_size_max))
@@ -210,12 +215,64 @@ def main(argv):
             distance_lm,distance_dm,distance_gt
 
 
+    def evaluate_lunch_time(anonymity_level,df_subsampled_from,day_profile):
+        subsample_size_max = int(comb(len(df_subsampled_from), 2))
+        print('total number of pairs is %s' % subsample_size_max)
+        subsample_size = int(round(subsample_size_max))
+        sp = Subsampling(data=df_subsampled_from)
+        data_pair, data_pair_all_index = sp.uniform_sampling(subsample_size=subsample_size, seed=0)
+
+        sim = Similarity(data=data_pair)
+        sim.extract_interested_attribute(interest=interest, window=window)
+        similarity_label, data_subsample = sim.label_via_silhouette_analysis(range_n_clusters=range(2, 8))
+
+        x1_train, x2_train, y_train, x1_test, x2_test, y_test = prepare_data(data_pair,similarity_label,0.5)
+        lm = Deep_Metric_Duplicate(mode='linear')
+        lm.train(x1_train,x2_train,y_train,x1_test,x2_test,y_test)
+
+        dm = Deep_Metric_Duplicate(mode='relu')
+        dm.train(x1_train,x2_train,y_train,x1_test,x2_test,y_test)
+
+        sanitized_profile_linear = util.sanitize_data(day_profile, distance_metric="deep", anonymity_level=anonymity_level,
+                                            rep_mode=rep_mode, deep_model=lm)
+
+        sanitized_profile_deep = util.sanitize_data(day_profile, distance_metric="deep", anonymity_level=anonymity_level,
+                                                    rep_mode=rep_mode, deep_model=dm)
+
+        loss_learned_metric_linear = pe.get_information_loss(data_gt=day_profile,
+                                                    data_sanitized=sanitized_profile_linear.round(),
+                                                    window=window)
+
+        loss_learned_metric_deep = pe.get_information_loss(data_gt=day_profile,
+                                                        data_sanitized=sanitized_profile_deep.round(),
+                                                        window=window)
+
+        distance_gt = get_ground_truth_distance(x1_test,x2_test,mode='segment',window=window)
+        distance_lm = lm.d_test
+        distance_dm = dm.d_test
+
+        # print('anonymity level %s' % anonymity_level)
+        print("sampled size %s" % subsample_size)
+        print("information loss with best metric %s" % loss_best_metric)
+        print("information loss with generic metric %s" % loss_generic_metric)
+        print("information loss with learned metric %s" % loss_learned_metric_linear)
+        print("information loss with learned metric deep  %s" % (loss_learned_metric_deep))
+        # pdb.set_trace()
+        return loss_learned_metric_linear,loss_learned_metric_deep,sanitized_profile_linear,sanitized_profile_deep,\
+            distance_lm,distance_dm,distance_gt
+
+    
+
     # Initialization of some useful classes
     util = Utilities()
     pe = PerformanceEvaluation()  
 
     # define use case
-    interest = 'window-usage'
+    if numberClasses == 2:
+        interest = 'segment'
+    else:
+        interest = 'window-usage'
+
     window = [17, 21]
     rep_mode = 'mean'
 
@@ -232,10 +289,17 @@ def main(argv):
 
     frac = 0.8
     anonymity_levels = np.arange(2,8)
-    losses_best = np.zeros(len(anonymity_levels))
-    losses_generic = np.zeros(len(anonymity_levels))
-    losses_linear = np.zeros((len(anonymity_levels),mc_num))
-    losses_deep = np.zeros((len(anonymity_levels),mc_num))
+
+    if numberClasses == 2:
+        losses_best = np.ones(len(anonymity_levels)) * np.nan
+        losses_generic = np.ones(len(anonymity_levels))* np.nan
+        losses_linear = np.ones((len(anonymity_levels),mc_num))* np.nan
+        losses_deep = np.ones((len(anonymity_levels),mc_num))* np.nan
+    else:
+        losses_best = np.zeros(len(anonymity_levels))
+        losses_generic = np.zeros(len(anonymity_levels))
+        losses_linear = np.zeros((len(anonymity_levels),mc_num))
+        losses_deep = np.zeros((len(anonymity_levels),mc_num))
 
     distances_dm = {}
     distances_lm = {}
@@ -248,10 +312,18 @@ def main(argv):
                                                     mode=interest, window=window)
         sanitized_profile_baseline = util.sanitize_data(day_profile, distance_metric='euclidean',
                                                         anonymity_level=anonymity_level, rep_mode=rep_mode)
-        loss_best_metric = pe.get_statistics_loss(data_gt=day_profile, data_sanitized=sanitized_profile_best,
+        
+        if numberClasses == 2:
+            loss_best_metric = pe.get_information_loss(data_gt=day_profile, data_sanitized=sanitized_profile_best,
+                                               window=window)
+            loss_generic_metric = pe.get_information_loss(data_gt=day_profile,
+                                                  data_sanitized=sanitized_profile_baseline.round(), window=window)
+        else:
+            loss_best_metric = pe.get_statistics_loss(data_gt=day_profile, data_sanitized=sanitized_profile_best,
                                                 mode=interest, window=window)
-        loss_generic_metric = pe.get_statistics_loss(data_gt=day_profile, data_sanitized=sanitized_profile_baseline,
+            loss_generic_metric = pe.get_statistics_loss(data_gt=day_profile, data_sanitized=sanitized_profile_baseline,
                                                     mode=interest, window=window)
+        
         losses_best[i] = loss_best_metric
         losses_generic[i] = loss_generic_metric
 
@@ -260,10 +332,15 @@ def main(argv):
                 df_subsampled_from = sanitized_profile_baseline.sample(frac=frac,replace=False, random_state=mc_i)
             else:
                 df_subsampled_from = day_profile_learning.sample(frac=frac,replace=False, random_state=mc_i)
-            subsample_size_max = int(comb(len(df_subsampled_from), 2))
-            logger.info('total number of pairs is %s' % subsample_size_max)
-            loss_learned_metric_linear, loss_learned_metric_deep, sanitized_profile_linear, sanitized_profile_deep, \
-                distance_lm, distance_dm, distance_gt = evaluate_peak_time(anonymity_level,df_subsampled_from,day_profile,
+            
+            if numberClasses == 2:
+                loss_learned_metric_linear, loss_learned_metric_deep, sanitized_profile_linear, sanitized_profile_deep, \
+                    distance_lm, distance_dm, distance_gt = evaluate_lunch_time(anonymity_level,df_subsampled_from,day_profile)
+            else:
+                subsample_size_max = int(comb(len(df_subsampled_from), 2))
+                logger.info('total number of pairs is %s' % subsample_size_max)
+                loss_learned_metric_linear, loss_learned_metric_deep, sanitized_profile_linear, sanitized_profile_deep, \
+                    distance_lm, distance_dm, distance_gt = evaluate_peak_time(anonymity_level,df_subsampled_from,day_profile,
                                                                         interest,window)
             losses_linear[i,mc_i] = loss_learned_metric_linear
             losses_deep[i,mc_i] = loss_learned_metric_deep
@@ -276,6 +353,10 @@ def main(argv):
             logger.info('mc iteration %s' % mc_i)
 
             fileName = 'exp_opa_tad_'
+            if numberClasses == 2:
+                fileName += '_rush_'
+            else:
+                fileName += '_peak_'
             fileName += os.path.basename(inputfile[0:-4]) 
             fileName += '_numberOfClasses_%i' %numberClasses
             if numberVehicles:
