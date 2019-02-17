@@ -26,7 +26,7 @@ def main(argv):
             inputfile = arg        
         elif opt == '-t':
             tile = arg
-        elif opt == '-t':
+        elif opt == '-r':
             rush = True
     if inputfile is None:
         print (__file__,' -i <input file> -t <title>')

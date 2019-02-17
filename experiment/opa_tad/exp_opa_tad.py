@@ -139,6 +139,7 @@ def main(argv):
         # reduces the number of columns as with pad
         if numberClasses == 2:
             res = 15
+            day_profile_all = day_profile_all.iloc[0:192,0::1]
         else:
             day_profile_all = day_profile_all.iloc[0::1,0::15]
     else:
@@ -354,13 +355,13 @@ def main(argv):
 
             fileName = 'exp_opa_tad_'
             if numberClasses == 2:
-                fileName += '_rush_'
+                fileName += 'rush_'
             else:
-                fileName += '_peak_'
+                fileName += 'peak_'
             fileName += os.path.basename(inputfile[0:-4]) 
-            fileName += '_numberOfClasses_%i' %numberClasses
+            fileName += '_classes_%i' %numberClasses
             if numberVehicles:
-                fileName += '_numberOfVehicles'   
+                fileName += '_vehicles'   
             if preSanitization:
                 fileName += '_presanitized'
             fileName += '.pickle'
