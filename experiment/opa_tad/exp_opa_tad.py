@@ -275,13 +275,13 @@ def main(argv):
             logger.info('anonymity level index %s'% i)
             logger.info('mc iteration %s' % mc_i)
 
-            fileName = 'exp_xyz'
+            fileName = 'exp_opa_tad_'
             fileName += os.path.basename(inputfile[0:-4]) 
+            fileName += '_numberOfClasses_%i' %numberClasses
             if numberVehicles:
-                fileName = '_numberOfVehicles'   
+                fileName += '_numberOfVehicles'   
             if preSanitization:
                 fileName += '_presanitized'
-            fileName += '_numberOfClasses_%i' %numberClasses
             fileName += '.pickle'
 
         try:            
