@@ -20,9 +20,9 @@ To cite the paper:
 For the application of the PAD framework the file [exp_opa_tad.py](experiment/opa_tad/exp_opa_tad.py) was created. Arguments can be added to this file. The list of parameters is described [here](#console-arguments). The help can be displayed with the ` -h` argument.
 
 ### Console Arguments
-* `-h`: Displays the help on the console.
+* `-h`: Displays the help on the console
 * `-i <input file>`: Specification of the input file for the experiment      
 * `-m <mc num>`: Specification of the number of Monte Carlo simulations
 * `-c <number of classes>`: Specifies the number of classes in which the data is to be grouped
-* `-p`: If this argument is used, the data is pre-senitization
+* `-p`: If this argument is used, the data is pre-sanitized
 * `-v`: If this argument is specified the class is used for the number of vehicles
